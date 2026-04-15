@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: baklava-ai
+  labels:
+    app: baklava-ai
+spec:
+  to:
+    kind: Service
+    name: baklava-ai
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge

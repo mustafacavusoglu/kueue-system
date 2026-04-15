@@ -1,0 +1,38 @@
+# Secrets
+.htpasswd
+users.htpasswd
+.htaccess
+.env
+.env.*
+*.secret
+*.key
+*.pem
+*.crt
+credentials.json
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+data/

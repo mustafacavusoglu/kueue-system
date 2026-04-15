@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baklava-ai
+  labels:
+    app: baklava-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baklava-ai
+  template:
+    metadata:
+      labels:
+        app: baklava-ai
+    spec:
+      containers:
+        - name: baklava-ai
+          image: docker.io/mustdo12/baklava-ai:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: baklava-ai-secret
+                  key: secret-key
+            - name: OPENSHIFT_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: baklava-ai-secret
+                  key: oauth-client-id
+            - name: OPENSHIFT_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: baklava-ai-secret
+                  key: oauth-client-secret
+            - name: OPENSHIFT_URL
+              value: "https://REPLACE_WITH_API_URL"
+            - name: OPENSHIFT_OAUTH_URL
+              value: "https://oauth-openshift-REPLACE_WITH_APPS_DOMAIN"
+            - name: APP_URL
+              value: "https://REPLACE_WITH_ROUTE_HOST"
+            - name: ADMIN_USERNAME
+              value: "alim"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: baklava-ai-data

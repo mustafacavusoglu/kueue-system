@@ -1,0 +1,7 @@
+apiVersion: oauth.openshift.io/v1
+kind: OAuthClient
+metadata:
+  name: baklava-ai
+grantMethod: auto
+redirectURIs:
+  - https://baklava-ai-kuyruk.apps-crc.testing/auth/callback
