@@ -215,3 +215,35 @@ oc rollout status deployment/baklava-ai
 ```bash
 oc logs deployment/baklava-ai -f
 ```
+
+---
+
+## Admin Kullanıcısını Değiştirme
+
+Varsayılan admin kullanıcı adı `alim` olarak ayarlıdır. Değiştirmek için **1 yer** güncellenmeli:
+
+### Deployment Env (Çalışan Pod)
+
+```bash
+# Mevcut admin'i gör
+oc set env deployment/baklava-ai --list | grep ADMIN
+
+# Yeni admin username set et
+oc set env deployment/baklava-ai ADMIN_USERNAME=yeni_admin_kullanici_adi
+
+# Pod restart'ı bekle
+oc rollout status deployment/baklava-ai
+```
+
+> **Not:** `ADMIN_USERNAME` ortam değişkeni `app/config.py`'daki varsayılan değeri (`alim`) override eder. Kod değiştirmeye gerek yok.
+
+### Varsayılan Değeri Kodda Değiştirmek (İsteğe Bağlı)
+
+Eğer deployment'ta env vermek yerine kodda varsayılanı değiştirmek isterseniz:
+
+`app/config.py` dosyasında:
+```python
+ADMIN_USERNAME: str = "alim"  # Bu değeri değiştirin
+```
+
+Sonra image'ı yeniden build ve push etmeniz gerekir.
