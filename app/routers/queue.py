@@ -34,7 +34,11 @@ def _item_to_dict(item, position=None):
         "description": item.description,
         "status": item.status,
         "display_name": display_name,
+        "username": item.username,
         "created_at": item.created_at.strftime("%d.%m.%Y %H:%M"),
+        "completed_at": item.completed_at.strftime("%d.%m.%Y %H:%M")
+        if item.completed_at
+        else None,
         "deleted_at": item.deleted_at.strftime("%d.%m.%Y %H:%M")
         if item.deleted_at
         else None,
@@ -156,6 +160,24 @@ async def all_queue(request: Request, db: Session = Depends(get_db)):
     ).all()
 
     items = [_item_to_dict(item, i + 1) for i, item in enumerate(waiting)]
+
+    return JSONResponse({"items": items})
+
+
+@router.get("/completed")
+async def all_completed(request: Request, db: Session = Depends(get_db)):
+    username = get_current_user(request)
+    if not username:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    completed = (
+        db.query(QueueItem)
+        .filter(QueueItem.status == "completed")
+        .order_by(QueueItem.completed_at.desc())
+        .all()
+    )
+
+    items = [_item_to_dict(item) for item in completed]
 
     return JSONResponse({"items": items})
 

@@ -71,6 +71,34 @@
         </h2>
         <div id="all-queue-list"></div>
     </div>
+
+    <div class="accordion" style="margin-top: 28px;">
+        <button class="accordion-header" onclick="toggleAccordion('completed')">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span style="color:var(--text-primary);font-weight:700;font-size:15px;">Tamamlananlar</span>
+                <span id="completed-count" style="font-size:12px;font-weight:600;color:var(--text-muted);">(0)</span>
+            </div>
+            <svg class="accordion-chevron" id="chevron-completed" width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="accordion-body" id="accordion-completed" style="max-height:0;overflow:hidden;transition:max-height 0.35s ease;">
+            <div id="completed-list" style="padding-top:4px;"></div>
+        </div>
+    </div>
+
+    <div class="accordion" style="margin-top: 12px;">
+        <button class="accordion-header" onclick="toggleAccordion('deleted')">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                <span style="color:var(--text-primary);font-weight:700;font-size:15px;">Silinenler</span>
+                <span id="deleted-count" style="font-size:12px;font-weight:600;color:var(--text-muted);">(0)</span>
+            </div>
+            <svg class="accordion-chevron" id="chevron-deleted" width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="accordion-body" id="accordion-deleted" style="max-height:0;overflow:hidden;transition:max-height 0.35s ease;">
+            <div id="deleted-list" style="padding-top:4px;"></div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -132,14 +160,13 @@
 
         var deleteHtml = '';
         if (item.status !== 'deleted') {
-            deleteHtml = '<button class="btn-danger btn-icon-sm" onclick="deleteItem(' + item.id + ', this)" title="Kuyruktan çıkar"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>';
+            deleteHtml = '<button class="btn-danger btn-icon-sm" onclick="deleteItem(' + item.id + ', this)" title="Sil"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>';
         }
 
         var commentFormHtml = item.status === 'waiting' ? renderCommentForm(item) : '';
 
         var itemStyle = item.status === 'completed' ? 'opacity:0.65;' : (item.status === 'deleted' ? 'opacity:0.55;' : '');
         var subjectStyle = item.status === 'deleted' ? 'text-decoration:line-through;opacity:0.6;' : '';
-        var deletedInfo = (item.status === 'deleted' && item.deleted_at) ? '<span style="color:var(--red-text);font-size:11px;opacity:0.7;">Silinme: ' + item.deleted_at + '</span>' : '';
 
         return '<div class="glass-card item-enter" data-id="' + item.id + '" style="padding:16px 20px;margin-bottom:8px;' + itemStyle + '">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">' +
@@ -152,7 +179,6 @@
                 '</div>' +
                 '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
                     '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                    deletedInfo +
                     badgeHtml +
                     deleteHtml +
                 '</div>' +
@@ -162,21 +188,30 @@
         '</div>';
     }
 
-    function renderEmpty() {
-        return '<div class="glass" style="padding:40px 20px;">' +
-            '<div class="empty-state">' +
-                '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>' +
-                '<p style="font-size:14px;">Henüz kuyrukta kaydınız yok.</p>' +
-                '<p style="font-size:12px;margin-top:4px;">Yukarıdaki formu kullanarak kuyruğa ekleyebilirsiniz.</p>' +
-            '</div></div>';
+    function renderEmpty(msg) {
+        return '<div class="glass" style="padding:36px 20px;"><div class="empty-state">' +
+            '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
+            '<p style="font-size:14px;">' + msg + '</p></div></div>';
     }
 
     function updateUI(data) {
+        var waiting = [];
+        var deleted = [];
+        if (data.items) {
+            data.items.forEach(function(item) {
+                if (item.status === 'deleted') {
+                    deleted.push(item);
+                } else {
+                    waiting.push(item);
+                }
+            });
+        }
+
         var list = document.getElementById('items-list');
-        if (!data.items || data.items.length === 0) {
-            list.innerHTML = renderEmpty();
+        if (waiting.length === 0) {
+            list.innerHTML = renderEmpty('Henüz kuyrukta kaydınız yok.');
         } else {
-            list.innerHTML = data.items.map(renderItem).join('');
+            list.innerHTML = waiting.map(renderItem).join('');
         }
 
         var badge = document.getElementById('position-badge');
@@ -191,10 +226,94 @@
             badge.style.display = 'none';
             visual.style.display = 'none';
         }
+
+        updateDeletedAccordion(deleted);
+    }
+
+    function renderCompletedItem(item) {
+        return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;opacity:0.7;">' +
+            '<div style="display:flex;align-items:center;gap:14px;">' +
+                '<div style="width:36px;height:36px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
+                    '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
+                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
+                        '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
+                        (item.completed_at ? '<span style="color:var(--green-text);font-size:11px;opacity:0.7;">Tamamlanma: ' + item.completed_at + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<span class="badge-completed" style="flex-shrink:0;">Tamamlandı</span>' +
+            '</div>' +
+            renderComments(item) +
+        '</div>';
+    }
+
+    function renderDeletedItem(item) {
+        return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;opacity:0.55;">' +
+            '<div style="display:flex;align-items:center;gap:14px;">' +
+                '<div style="width:36px;height:36px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:line-through;opacity:0.6;">' + escapeHtml(item.subject) + '</div>' +
+                    '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
+                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
+                        '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
+                        (item.deleted_at ? '<span style="color:var(--red-text);font-size:11px;opacity:0.7;">Silinme: ' + item.deleted_at + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<span class="badge-deleted" style="flex-shrink:0;">Silindi</span>' +
+            '</div>' +
+            renderComments(item) +
+        '</div>';
+    }
+
+    function updateCompletedAccordion(items) {
+        document.getElementById('completed-count').textContent = '(' + items.length + ')';
+        var list = document.getElementById('completed-list');
+        list.innerHTML = items.length > 0
+            ? items.map(renderCompletedItem).join('')
+            : renderEmpty('Tamamlanan kayıt yok.');
+    }
+
+    function updateDeletedAccordion(items) {
+        document.getElementById('deleted-count').textContent = '(' + items.length + ')';
+        var list = document.getElementById('deleted-list');
+        list.innerHTML = items.length > 0
+            ? items.map(renderDeletedItem).join('')
+            : renderEmpty('Silinen kayıt yok.');
     }
 
     function loadItems() {
         fetch('/queue/my').then(function(r) { return r.json(); }).then(updateUI);
+    }
+
+    function loadAllQueue() {
+        fetch('/queue/all').then(function(r) { return r.json(); }).then(function(data) {
+            document.getElementById('all-queue-count').textContent = '(' + data.items.length + ' kişi)';
+            var list = document.getElementById('all-queue-list');
+            list.innerHTML = data.items.length > 0
+                ? data.items.map(function(item) {
+                    return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;">' +
+                        '<div style="display:flex;align-items:center;gap:14px;">' +
+                            '<div class="position-badge">' + item.position + '</div>' +
+                            '<div style="flex:1;min-width:0;">' +
+                                '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
+                                '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
+                                    '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
+                                    '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        renderComments(item) +
+                    '</div>';
+                }).join('')
+                : renderEmpty('Kuyrukta bekleyen kimse yok.');
+        });
+    }
+
+    function loadCompleted() {
+        fetch('/queue/completed').then(function(r) { return r.json(); }).then(function(data) {
+            updateCompletedAccordion(data.items);
+        });
     }
 
     document.getElementById('add-form').addEventListener('submit', function(e) {
@@ -214,6 +333,7 @@
             subject.focus();
             loadItems();
             loadAllQueue();
+            loadCompleted();
             showToast('Kuyruğa eklendi!', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
@@ -233,6 +353,7 @@
         }).then(function(r) { return r.json(); }).then(function() {
             loadItems();
             loadAllQueue();
+            loadCompleted();
             showToast('Kayıt silindi', 'success');
         }).catch(function() {
             row.classList.remove('item-exit');
@@ -240,39 +361,17 @@
         });
     };
 
-    function renderAllQueueItem(item) {
-        return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;">' +
-            '<div style="display:flex;align-items:center;gap:14px;">' +
-                '<div class="position-badge">' + item.position + '</div>' +
-                '<div style="flex:1;min-width:0;">' +
-                    '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
-                    '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
-                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
-                        '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            renderComments(item) +
-        '</div>';
-    }
-
-    function renderAllQueueEmpty() {
-        return '<div class="glass" style="padding:36px 20px;"><div class="empty-state">' +
-            '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
-            '<p style="font-size:14px;">Kuyrukta bekleyen kimse yok.</p></div></div>';
-    }
-
-    function updateAllQueue(data) {
-        document.getElementById('all-queue-count').textContent = '(' + data.items.length + ' kişi)';
-        var list = document.getElementById('all-queue-list');
-        list.innerHTML = data.items.length > 0
-            ? data.items.map(renderAllQueueItem).join('')
-            : renderAllQueueEmpty();
-    }
-
-    function loadAllQueue() {
-        fetch('/queue/all').then(function(r) { return r.json(); }).then(updateAllQueue);
-    }
+    window.toggleAccordion = function(name) {
+        var body = document.getElementById('accordion-' + name);
+        var chevron = document.getElementById('chevron-' + name);
+        if (body.style.maxHeight && body.style.maxHeight !== '0px') {
+            body.style.maxHeight = '0px';
+            chevron.style.transform = 'rotate(0deg)';
+        } else {
+            body.style.maxHeight = body.scrollHeight + 'px';
+            chevron.style.transform = 'rotate(180deg)';
+        }
+    };
 
     window.addUserComment = function(itemId) {
         var input = document.getElementById('comment-input-' + itemId);
@@ -297,6 +396,7 @@
 
     loadItems();
     loadAllQueue();
+    loadCompleted();
 })();
 </script>
 {% endblock %}

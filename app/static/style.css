@@ -628,3 +628,42 @@ label {
   from { opacity: 1; transform: translateY(0); max-height: 200px; margin-bottom: 10px; }
   to { opacity: 0; transform: translateY(-8px); max-height: 0; margin-bottom: 0; padding: 0; overflow: hidden; }
 }
+
+.accordion {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.2s ease;
+}
+
+.accordion-header:hover {
+  background: var(--bg-card-hover);
+}
+
+.accordion-chevron {
+  transition: transform 0.35s ease;
+  flex-shrink: 0;
+}
+
+.accordion-body {
+  padding: 0 16px;
+}
+
+.accordion-body > div {
+  padding-bottom: 12px;
+}
