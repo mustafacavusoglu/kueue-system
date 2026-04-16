@@ -26,7 +26,7 @@
 
 <div style="max-width: 1100px; margin: 0 auto; padding: 28px 24px;">
 
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
         <div class="glass" style="padding: 20px; text-align: center;">
             <div id="stat-waiting" style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, var(--gold-400), var(--gold-600)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">0</div>
             <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Bekleyen</div>
@@ -34,6 +34,10 @@
         <div class="glass" style="padding: 20px; text-align: center;">
             <div id="stat-completed" style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #86efac, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">0</div>
             <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Tamamlanan</div>
+        </div>
+        <div class="glass" style="padding: 20px; text-align: center;">
+            <div id="stat-deleted" style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #fca5a5, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">0</div>
+            <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Silinen</div>
         </div>
         <div class="glass" style="padding: 20px; text-align: center;">
             <div id="stat-total" style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #93c5fd, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">0</div>
@@ -48,6 +52,9 @@
         <button onclick="switchTab('completed')" class="tab-btn" data-tab="completed">
             Tamamlananlar (<span id="tab-completed-count">0</span>)
         </button>
+        <button onclick="switchTab('deleted')" class="tab-btn" data-tab="deleted">
+            Silinenler (<span id="tab-deleted-count">0</span>)
+        </button>
     </div>
 
     <div id="waiting-tab">
@@ -56,6 +63,10 @@
 
     <div id="completed-tab" style="display: none;">
         <div id="completed-list"></div>
+    </div>
+
+    <div id="deleted-tab" style="display: none;">
+        <div id="deleted-list"></div>
     </div>
 </div>
 
@@ -95,10 +106,15 @@
         '</div>';
     }
 
-    function renderWaitingItem(item) {
+    function renderWaitingItem(item, isFirst, isLast) {
         var descHtml = item.description
             ? '<div style="flex:1;min-width:0;color:var(--text-muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;">' + escapeHtml(item.description) + '</div>'
             : '';
+        var moveBtns = '<div style="display:flex;gap:4px;">';
+        moveBtns += '<button class="btn-icon" onclick="moveItem(' + item.id + ', \'up\')" title="Yukarı taşı"' + (isFirst ? ' disabled style="opacity:0.3;cursor:default;"' : '') + '><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg></button>';
+        moveBtns += '<button class="btn-icon" onclick="moveItem(' + item.id + ', \'down\')" title="Aşağı taşı"' + (isLast ? ' disabled style="opacity:0.3;cursor:default;"' : '') + '><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></button>';
+        moveBtns += '</div>';
+
         return '<div class="glass-card item-enter" data-id="' + item.id + '" style="padding:16px 20px;margin-bottom:8px;">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">' +
                 '<div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">' +
@@ -112,9 +128,13 @@
                     '</div>' +
                 '</div>' +
                 descHtml +
+                moveBtns +
                 '<button class="btn-success" onclick="completeItem(' + item.id + ', this)" style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 16px;">' +
                     '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>' +
                     'Tamamla' +
+                '</button>' +
+                '<button class="btn-danger btn-icon-sm" onclick="adminDeleteItem(' + item.id + ', this)" title="Sil">' +
+                    '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
                 '</button>' +
             '</div>' +
             renderComments(item) +
@@ -138,7 +158,34 @@
                         '</div>' +
                     '</div>' +
                 '</div>' +
-                '<span class="badge-completed">Tamamlandı</span>' +
+                '<div style="display:flex;align-items:center;gap:8px;">' +
+                    '<span class="badge-completed">Tamamlandı</span>' +
+                    '<button class="btn-danger btn-icon-sm" onclick="adminDeleteItem(' + item.id + ', this)" title="Sil">' +
+                        '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+            renderComments(item) +
+        '</div>';
+    }
+
+    function renderDeletedItem(item) {
+        return '<div class="glass-card" data-id="' + item.id + '" style="padding:16px 20px;margin-bottom:8px;opacity:0.55;">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">' +
+                '<div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">' +
+                    '<div style="width:36px;height:36px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;display:flex;align-items:center;justify-content:center;">' +
+                        '<svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>' +
+                    '</div>' +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<div style="color:var(--text-primary);font-weight:600;font-size:14px;opacity:0.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:line-through;">' + escapeHtml(item.subject) + '</div>' +
+                        '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
+                            '<span style="color:var(--text-muted);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + ' <span style="opacity:0.6;font-weight:400;">(' + escapeHtml(item.username) + ')</span></span>' +
+                            '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
+                            (item.deleted_at ? '<span style="color:var(--red-text);font-size:11px;opacity:0.7;">Silinme: ' + item.deleted_at + '</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<span class="badge-deleted">Silindi</span>' +
             '</div>' +
             renderComments(item) +
         '</div>';
@@ -153,19 +200,28 @@
     function updateUI(data) {
         document.getElementById('stat-waiting').textContent = data.waiting.length;
         document.getElementById('stat-completed').textContent = data.completed.length;
-        document.getElementById('stat-total').textContent = data.waiting.length + data.completed.length;
+        document.getElementById('stat-deleted').textContent = data.deleted.length;
+        document.getElementById('stat-total').textContent = data.waiting.length + data.completed.length + data.deleted.length;
         document.getElementById('tab-waiting-count').textContent = data.waiting.length;
         document.getElementById('tab-completed-count').textContent = data.completed.length;
+        document.getElementById('tab-deleted-count').textContent = data.deleted.length;
 
         var wList = document.getElementById('waiting-list');
         wList.innerHTML = data.waiting.length > 0
-            ? data.waiting.map(renderWaitingItem).join('')
+            ? data.waiting.map(function(item, idx) {
+                return renderWaitingItem(item, idx === 0, idx === data.waiting.length - 1);
+            }).join('')
             : renderEmpty('Kuyrukta bekleyen kimse yok.');
 
         var cList = document.getElementById('completed-list');
         cList.innerHTML = data.completed.length > 0
             ? data.completed.map(renderCompletedItem).join('')
             : renderEmpty('Henüz tamamlanan kayıt yok.');
+
+        var dList = document.getElementById('deleted-list');
+        dList.innerHTML = data.deleted.length > 0
+            ? data.deleted.map(renderDeletedItem).join('')
+            : renderEmpty('Silinen kayıt yok.');
     }
 
     function loadData() {
@@ -191,9 +247,40 @@
         });
     };
 
+    window.adminDeleteItem = function(id, btn) {
+        var row = btn.closest('.glass-card');
+        row.style.transition = 'all 0.3s ease';
+        row.style.opacity = '0.3';
+
+        fetch('/admin/' + id + '/delete', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+        }).then(function(r) { return r.json(); }).then(function() {
+            loadData();
+            showToast('Kayıt silindi!', 'success');
+        }).catch(function() {
+            row.style.opacity = '1';
+            showToast('Hata oluştu', 'error');
+        });
+    };
+
+    window.moveItem = function(id, direction) {
+        fetch('/admin/' + id + '/move-' + direction, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' },
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.ok) {
+                loadData();
+            }
+        }).catch(function() {
+            showToast('Hata oluştu', 'error');
+        });
+    };
+
     window.switchTab = function(tab) {
         document.getElementById('waiting-tab').style.display = tab === 'waiting' ? '' : 'none';
         document.getElementById('completed-tab').style.display = tab === 'completed' ? '' : 'none';
+        document.getElementById('deleted-tab').style.display = tab === 'deleted' ? '' : 'none';
         document.querySelectorAll('.tab-btn').forEach(function(btn) {
             btn.classList.toggle('active', btn.dataset.tab === tab);
         });

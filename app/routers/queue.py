@@ -2,12 +2,13 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse, JSONResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
-from app.models import QueueItem, Comment
+from app.models import QueueItem, Comment, ISTANBUL_TZ
 
 router = APIRouter(prefix="/queue")
 
@@ -34,9 +35,18 @@ def _item_to_dict(item, position=None):
         "status": item.status,
         "display_name": display_name,
         "created_at": item.created_at.strftime("%d.%m.%Y %H:%M"),
+        "deleted_at": item.deleted_at.strftime("%d.%m.%Y %H:%M")
+        if item.deleted_at
+        else None,
         "position": position,
         "comments": [_comment_to_dict(c) for c in item.comments],
     }
+
+
+def _waiting_order(query):
+    return query.order_by(
+        func.coalesce(QueueItem.queue_order, 999999), QueueItem.created_at.asc()
+    )
 
 
 @router.post("/add")
@@ -57,12 +67,9 @@ async def add_to_queue(
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
-        all_waiting = (
-            db.query(QueueItem)
-            .filter(QueueItem.status == "waiting")
-            .order_by(QueueItem.created_at.asc())
-            .all()
-        )
+        all_waiting = _waiting_order(
+            db.query(QueueItem).filter(QueueItem.status == "waiting")
+        ).all()
         position = next(
             (i for i, w in enumerate(all_waiting, 1) if w.id == item.id), None
         )
@@ -86,8 +93,9 @@ async def delete_from_queue(
         .filter(QueueItem.id == item_id, QueueItem.username == username)
         .first()
     )
-    if item and item.status == "waiting":
-        db.delete(item)
+    if item and item.status != "deleted":
+        item.status = "deleted"
+        item.deleted_at = datetime.now(ISTANBUL_TZ)
         db.commit()
 
     accept = request.headers.get("accept", "")
@@ -103,12 +111,9 @@ async def my_queue(request: Request, db: Session = Depends(get_db)):
     if not username:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
-    all_waiting = (
-        db.query(QueueItem)
-        .filter(QueueItem.status == "waiting")
-        .order_by(QueueItem.created_at.asc())
-        .all()
-    )
+    all_waiting = _waiting_order(
+        db.query(QueueItem).filter(QueueItem.status == "waiting")
+    ).all()
 
     global_position = None
     for idx, w in enumerate(all_waiting, 1):
@@ -146,12 +151,9 @@ async def all_queue(request: Request, db: Session = Depends(get_db)):
     if not username:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
-    waiting = (
-        db.query(QueueItem)
-        .filter(QueueItem.status == "waiting")
-        .order_by(QueueItem.created_at.asc())
-        .all()
-    )
+    waiting = _waiting_order(
+        db.query(QueueItem).filter(QueueItem.status == "waiting")
+    ).all()
 
     items = [_item_to_dict(item, i + 1) for i, item in enumerate(waiting)]
 

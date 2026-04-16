@@ -6,6 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
+from sqlalchemy import func
+
 from app.config import settings
 from app.database import init_db, get_db
 from app.models import QueueItem
@@ -54,7 +56,9 @@ async def dashboard(request: Request, db=Depends(get_db)):
     all_waiting = (
         db.query(QueueItem)
         .filter(QueueItem.status == "waiting")
-        .order_by(QueueItem.created_at.asc())
+        .order_by(
+            func.coalesce(QueueItem.queue_order, 999999), QueueItem.created_at.asc()
+        )
         .all()
     )
 

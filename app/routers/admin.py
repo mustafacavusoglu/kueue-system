@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -40,9 +41,18 @@ def _item_to_dict(item, position=None):
         "completed_at": item.completed_at.strftime("%d.%m.%Y %H:%M")
         if item.completed_at
         else None,
+        "deleted_at": item.deleted_at.strftime("%d.%m.%Y %H:%M")
+        if item.deleted_at
+        else None,
         "position": position,
         "comments": [_comment_to_dict(c) for c in item.comments],
     }
+
+
+def _waiting_order(query):
+    return query.order_by(
+        func.coalesce(QueueItem.queue_order, 999999), QueueItem.created_at.asc()
+    )
 
 
 @router.get("")
@@ -53,17 +63,21 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
     if username != settings.ADMIN_USERNAME:
         return RedirectResponse(url="/dashboard", status_code=303)
 
-    waiting = (
-        db.query(QueueItem)
-        .filter(QueueItem.status == "waiting")
-        .order_by(QueueItem.created_at.asc())
-        .all()
-    )
+    waiting = _waiting_order(
+        db.query(QueueItem).filter(QueueItem.status == "waiting")
+    ).all()
 
     completed = (
         db.query(QueueItem)
         .filter(QueueItem.status == "completed")
         .order_by(QueueItem.completed_at.desc())
+        .all()
+    )
+
+    deleted = (
+        db.query(QueueItem)
+        .filter(QueueItem.status == "deleted")
+        .order_by(QueueItem.deleted_at.desc())
         .all()
     )
 
@@ -75,6 +89,7 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
             "admin_username": settings.ADMIN_USERNAME,
             "waiting": waiting,
             "completed": completed,
+            "deleted": deleted,
         },
     )
 
@@ -85,12 +100,9 @@ async def admin_data(request: Request, db: Session = Depends(get_db)):
     if not username or username != settings.ADMIN_USERNAME:
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
-    waiting = (
-        db.query(QueueItem)
-        .filter(QueueItem.status == "waiting")
-        .order_by(QueueItem.created_at.asc())
-        .all()
-    )
+    waiting = _waiting_order(
+        db.query(QueueItem).filter(QueueItem.status == "waiting")
+    ).all()
 
     completed = (
         db.query(QueueItem)
@@ -99,10 +111,18 @@ async def admin_data(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
+    deleted = (
+        db.query(QueueItem)
+        .filter(QueueItem.status == "deleted")
+        .order_by(QueueItem.deleted_at.desc())
+        .all()
+    )
+
     return JSONResponse(
         {
             "waiting": [_item_to_dict(item, i + 1) for i, item in enumerate(waiting)],
             "completed": [_item_to_dict(item) for item in completed],
+            "deleted": [_item_to_dict(item) for item in deleted],
         }
     )
 
@@ -132,6 +152,89 @@ async def complete_item(
         return JSONResponse({"ok": True})
 
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.post("/{item_id}/delete")
+async def admin_delete_item(
+    request: Request,
+    item_id: int,
+    db: Session = Depends(get_db),
+):
+    username = get_current_user(request)
+    if not username or username != settings.ADMIN_USERNAME:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    item = db.query(QueueItem).filter(QueueItem.id == item_id).first()
+    if item and item.status != "deleted":
+        item.status = "deleted"
+        item.deleted_at = datetime.now(ISTANBUL_TZ)
+        db.commit()
+
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept:
+        return JSONResponse({"ok": True})
+
+    return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.post("/{item_id}/move-up")
+async def move_item_up(
+    request: Request,
+    item_id: int,
+    db: Session = Depends(get_db),
+):
+    username = get_current_user(request)
+    if not username or username != settings.ADMIN_USERNAME:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    waiting = _waiting_order(
+        db.query(QueueItem).filter(QueueItem.status == "waiting")
+    ).all()
+
+    idx = next((i for i, w in enumerate(waiting) if w.id == item_id), None)
+    if idx is None or idx == 0:
+        return JSONResponse({"ok": False})
+
+    for i, item in enumerate(waiting):
+        item.queue_order = i
+
+    waiting[idx].queue_order, waiting[idx - 1].queue_order = (
+        waiting[idx - 1].queue_order,
+        waiting[idx].queue_order,
+    )
+    db.commit()
+
+    return JSONResponse({"ok": True})
+
+
+@router.post("/{item_id}/move-down")
+async def move_item_down(
+    request: Request,
+    item_id: int,
+    db: Session = Depends(get_db),
+):
+    username = get_current_user(request)
+    if not username or username != settings.ADMIN_USERNAME:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    waiting = _waiting_order(
+        db.query(QueueItem).filter(QueueItem.status == "waiting")
+    ).all()
+
+    idx = next((i for i, w in enumerate(waiting) if w.id == item_id), None)
+    if idx is None or idx == len(waiting) - 1:
+        return JSONResponse({"ok": False})
+
+    for i, item in enumerate(waiting):
+        item.queue_order = i
+
+    waiting[idx].queue_order, waiting[idx + 1].queue_order = (
+        waiting[idx + 1].queue_order,
+        waiting[idx].queue_order,
+    )
+    db.commit()
+
+    return JSONResponse({"ok": True})
 
 
 @router.post("/{item_id}/comment")

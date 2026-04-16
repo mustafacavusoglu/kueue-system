@@ -254,6 +254,36 @@ body {
   background: rgba(239, 68, 68, 0.18);
 }
 
+.btn-icon {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.btn-icon:disabled {
+  cursor: not-allowed;
+}
+
+.btn-icon-sm {
+  padding: 7px 10px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-success {
   background: var(--green-bg);
   color: var(--green-text);
@@ -295,6 +325,20 @@ body {
   font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--green-border);
+  white-space: nowrap;
+}
+
+.badge-deleted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--red-bg);
+  color: var(--red-text);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--red-border);
   white-space: nowrap;
 }
 

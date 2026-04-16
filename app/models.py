@@ -16,10 +16,12 @@ class QueueItem(Base):
     subject: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="waiting")
+    queue_order: Mapped[int] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(ISTANBUL_TZ)
     )
     completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     comments: Mapped[list["Comment"]] = relationship(
         "Comment",
         back_populates="item",
