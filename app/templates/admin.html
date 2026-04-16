@@ -199,6 +199,26 @@
         });
     };
 
+    window.addAdminComment = function(itemId) {
+        var input = document.getElementById('comment-input-' + itemId);
+        var text = input.value.trim();
+        if (!text) return;
+        input.disabled = true;
+
+        fetch('/admin/' + itemId + '/comment', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'text=' + encodeURIComponent(text),
+        }).then(function(r) { return r.json(); }).then(function() {
+            loadData();
+            showToast('Yorum eklendi!', 'success');
+        }).catch(function() {
+            showToast('Hata oluştu', 'error');
+        }).finally(function() {
+            input.disabled = false;
+        });
+    };
+
     loadData();
 })();
 </script>

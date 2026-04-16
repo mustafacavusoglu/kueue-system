@@ -83,6 +83,32 @@
         return d.innerHTML;
     }
 
+    function renderComments(item) {
+        if (!item.comments || item.comments.length === 0) return '';
+        var html = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);">';
+        item.comments.forEach(function(c) {
+            html += '<div style="display:flex;gap:8px;margin-bottom:6px;">' +
+                '<div style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--gold-400);margin-top:6px;"></div>' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="display:flex;align-items:center;gap:6px;">' +
+                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(c.display_name) + '</span>' +
+                        '<span style="color:var(--text-muted);font-size:10px;">' + c.created_at + '</span>' +
+                    '</div>' +
+                    '<div style="color:var(--text-secondary);font-size:12px;margin-top:1px;word-break:break-word;">' + escapeHtml(c.text) + '</div>' +
+                '</div>' +
+            '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function renderCommentForm(item) {
+        return '<div style="margin-top:8px;display:flex;gap:8px;">' +
+            '<input type="text" id="comment-input-' + item.id + '" class="input-field" style="flex:1;height:34px;font-size:12px;" placeholder="Yorum yaz...">' +
+            '<button class="btn-primary" style="height:34px;padding:0 12px;font-size:12px;" onclick="addUserComment(' + item.id + ')">Gönder</button>' +
+        '</div>';
+    }
+
     function renderItem(item) {
         var posHtml = '';
         if (item.status === 'waiting' && item.position) {
@@ -112,14 +138,10 @@
                     '<div style="flex:1;min-width:0;">' +
                         '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
                         (item.description ? '<div style="color:var(--text-muted);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.description) + '</div>' : '') +
-                    '</div>' +
-                '</div>' +
-                '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
-                    '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                    badgeHtml +
-                    deleteHtml +
                 '</div>' +
             '</div>' +
+            renderComments(item) +
+            (item.status === 'waiting' ? renderCommentForm(item) : '') +
         '</div>';
     }
 
@@ -213,6 +235,7 @@
                     '</div>' +
                 '</div>' +
             '</div>' +
+            renderComments(item) +
         '</div>';
     }
 
@@ -233,6 +256,27 @@
     function loadAllQueue() {
         fetch('/queue/all').then(function(r) { return r.json(); }).then(updateAllQueue);
     }
+
+    window.addUserComment = function(itemId) {
+        var input = document.getElementById('comment-input-' + itemId);
+        var text = input.value.trim();
+        if (!text) return;
+        input.disabled = true;
+
+        fetch('/queue/' + itemId + '/comment', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'text=' + encodeURIComponent(text),
+        }).then(function(r) { return r.json(); }).then(function() {
+            loadItems();
+            loadAllQueue();
+            showToast('Yorum eklendi!', 'success');
+        }).catch(function() {
+            showToast('Hata oluştu', 'error');
+        }).finally(function() {
+            input.disabled = false;
+        });
+    };
 
     loadItems();
     loadAllQueue();
