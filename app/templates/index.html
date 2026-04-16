@@ -131,17 +131,25 @@
             deleteHtml = '<button class="btn-danger" onclick="deleteItem(' + item.id + ', this)" title="Kuyruktan çıkar"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>';
         }
 
-        return '<div class="glass-card item-enter" data-id="' + item.id + '" style="padding:16px 20px;margin-bottom:8px;">' +
+        var commentFormHtml = item.status === 'waiting' ? renderCommentForm(item) : '';
+
+        return '<div class="glass-card item-enter" data-id="' + item.id + '" style="padding:16px 20px;margin-bottom:8px;' + (item.status === 'completed' ? 'opacity:0.65;' : '') + '">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">' +
                 '<div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">' +
                     posHtml +
                     '<div style="flex:1;min-width:0;">' +
                         '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
                         (item.description ? '<div style="color:var(--text-muted);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.description) + '</div>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
+                    '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
+                    badgeHtml +
+                    deleteHtml +
                 '</div>' +
             '</div>' +
             renderComments(item) +
-            (item.status === 'waiting' ? renderCommentForm(item) : '') +
+            commentFormHtml +
         '</div>';
     }
 
