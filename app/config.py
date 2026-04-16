@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic_settings import BaseSettings
 
 
@@ -12,6 +14,15 @@ class Settings(BaseSettings):
     OPENSHIFT_OAUTH_CLIENT_SECRET: str = "change-me"
     OPENSHIFT_OAUTH_SCOPE: str = "user:info"
     APP_URL: str = "http://localhost:8080"
+    ALLOWED_GROUP: str = "INTERTECH-MLOps"
+    ALLOWED_USERS: List[str] = [
+        "D49831",
+        "D60086",
+        "D60219",
+        "D63746",
+        "D67711",
+        "D67712"
+    ]
 
     @property
     def authorize_url(self) -> str:

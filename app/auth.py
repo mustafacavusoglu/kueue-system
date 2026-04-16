@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+ALLOWED_USERS = set(settings.ALLOWED_USERS)
+
 oauth = OAuth()
 oauth.register(
     name="openshift",
@@ -65,10 +67,21 @@ async def auth_callback(request: Request):
             user_resp.raise_for_status()
             user_info = user_resp.json()
 
-        username = user_info.get("metadata", {}).get("name") or user_info.get("name")
-        logger.info(f"Logged in user: {username}")
-        if username:
-            request.session["username"] = username
+            username = user_info.get("metadata", {}).get("name") or user_info.get(
+                "name"
+            )
+            logger.info(f"Logged in user: {username}")
+            if not username:
+                logger.warning("Username not found in user info response.")
+                return RedirectResponse(url="/", status_code=303)
+
+            if username not in ALLOWED_USERS:
+                logger.warning(
+                    f"User {username} is not authorized to access the application."
+                )
+                return RedirectResponse(url="/", status_code=303)
+
+        request.session["username"] = username
         return RedirectResponse(url="/dashboard", status_code=303)
     except Exception as e:
         logger.error(f"Auth callback error: {e}", exc_info=True)
