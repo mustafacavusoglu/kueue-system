@@ -62,6 +62,15 @@
         </h2>
         <div id="items-list"></div>
     </div>
+
+    <div style="margin-top: 28px;">
+        <h2 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" fill="none" stroke="var(--gold-500)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+            Genel Kuyruk
+            <span id="all-queue-count" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">(0 kişi)</span>
+        </h2>
+        <div id="all-queue-list"></div>
+    </div>
 </div>
 
 <script>
@@ -165,6 +174,7 @@
             desc.value = '';
             subject.focus();
             loadItems();
+            loadAllQueue();
             showToast('Kuyruğa eklendi!', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
@@ -183,6 +193,7 @@
             headers: { 'Accept': 'application/json' },
         }).then(function(r) { return r.json(); }).then(function() {
             loadItems();
+            loadAllQueue();
             showToast('Kuyruktan çıkarıldı', 'success');
         }).catch(function() {
             row.classList.remove('item-exit');
@@ -190,7 +201,41 @@
         });
     };
 
+    function renderAllQueueItem(item) {
+        return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;">' +
+            '<div style="display:flex;align-items:center;gap:14px;">' +
+                '<div class="position-badge">' + item.position + '</div>' +
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
+                    '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
+                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
+                        '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    function renderAllQueueEmpty() {
+        return '<div class="glass" style="padding:36px 20px;"><div class="empty-state">' +
+            '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
+            '<p style="font-size:14px;">Kuyrukta bekleyen kimse yok.</p></div></div>';
+    }
+
+    function updateAllQueue(data) {
+        document.getElementById('all-queue-count').textContent = '(' + data.items.length + ' kişi)';
+        var list = document.getElementById('all-queue-list');
+        list.innerHTML = data.items.length > 0
+            ? data.items.map(renderAllQueueItem).join('')
+            : renderAllQueueEmpty();
+    }
+
+    function loadAllQueue() {
+        fetch('/queue/all').then(function(r) { return r.json(); }).then(updateAllQueue);
+    }
+
     loadItems();
+    loadAllQueue();
 })();
 </script>
 {% endblock %}

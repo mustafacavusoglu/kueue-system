@@ -5,18 +5,23 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
+from app.config import settings
 from app.database import get_db
 from app.models import QueueItem
 
 router = APIRouter(prefix="/queue")
 
+USER_NAMES = settings.ALLOWED_USERS
+
 
 def _item_to_dict(item, position=None):
+    display_name = USER_NAMES.get(item.username, item.username)
     return {
         "id": item.id,
         "subject": item.subject,
         "description": item.description,
         "status": item.status,
+        "display_name": display_name,
         "created_at": item.created_at.strftime("%d.%m.%Y %H:%M"),
         "position": position,
     }
@@ -121,3 +126,21 @@ async def my_queue(request: Request, db: Session = Depends(get_db)):
             "global_position": global_position,
         }
     )
+
+
+@router.get("/all")
+async def all_queue(request: Request, db: Session = Depends(get_db)):
+    username = get_current_user(request)
+    if not username:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    waiting = (
+        db.query(QueueItem)
+        .filter(QueueItem.status == "waiting")
+        .order_by(QueueItem.created_at.asc())
+        .all()
+    )
+
+    items = [_item_to_dict(item, i + 1) for i, item in enumerate(waiting)]
+
+    return JSONResponse({"items": items})
