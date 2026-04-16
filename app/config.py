@@ -15,14 +15,14 @@ class Settings(BaseSettings):
     OPENSHIFT_OAUTH_SCOPE: str = "user:info"
     APP_URL: str = "http://localhost:8080"
     ALLOWED_GROUP: str = "INTERTECH-MLOps"
-    ALLOWED_USERS: List[str] = [
-        "D49831",
-        "D60086",
-        "D60219",
-        "D63746",
-        "D67711",
-        "D67712"
-    ]
+    ALLOWED_USERS: dict[str, str] = {
+        "D49831" :"Ali MUŞDU",
+        "D60086" : "Dilek ARABUL",
+        "D60219" : "Zeynep ÇETİN GÜNEŞ",
+        "D63746" : "Doğukan POLATEL",
+        "D67711" : "Yiğit Baran UÇAR",
+        "D67712" : "Mustafa ÇAVUŞOĞLU",
+    }
 
     @property
     def authorize_url(self) -> str:

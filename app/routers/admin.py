@@ -13,11 +13,15 @@ from app.models import QueueItem, ISTANBUL_TZ
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory="app/templates")
 
+USER_NAMES = settings.ALLOWED_USERS
+
 
 def _item_to_dict(item, position=None):
+    display_name = USER_NAMES.get(item.username, item.username)
     return {
         "id": item.id,
         "username": item.username,
+        "display_name": display_name,
         "subject": item.subject,
         "description": item.description,
         "status": item.status,

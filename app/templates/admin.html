@@ -80,7 +80,7 @@
                     '<div style="flex:1;min-width:0;">' +
                         '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
                         '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
-                            '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">@' + escapeHtml(item.username) + '</span>' +
+                            '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + ' <span style="opacity:0.6;font-weight:400;">(' + escapeHtml(item.username) + ')</span></span>' +
                             '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
                         '</div>' +
                     '</div>' +
@@ -104,7 +104,7 @@
                     '<div style="flex:1;min-width:0;">' +
                         '<div style="color:var(--text-primary);font-weight:600;font-size:14px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
                         '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
-                            '<span style="color:var(--text-muted);font-size:11px;font-weight:600;">@' + escapeHtml(item.username) + '</span>' +
+                            '<span style="color:var(--text-muted);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + ' <span style="opacity:0.6;font-weight:400;">(' + escapeHtml(item.username) + ')</span></span>' +
                             '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
                             (item.completed_at ? '<span style="color:var(--green-text);font-size:11px;opacity:0.7;">Tamamlanma: ' + item.completed_at + '</span>' : '') +
                         '</div>' +
