@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
-from app.models import QueueItem
+from app.models import QueueItem, ISTANBUL_TZ
 
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory="app/templates")
@@ -108,7 +108,7 @@ async def complete_item(
     )
     if item:
         item.status = "completed"
-        item.completed_at = datetime.now(timezone.utc)
+        item.completed_at = datetime.now(ISTANBUL_TZ)
         db.commit()
 
     accept = request.headers.get("accept", "")
