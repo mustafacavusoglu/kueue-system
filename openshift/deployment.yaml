@@ -42,7 +42,7 @@ spec:
             - name: APP_URL
               value: "https://REPLACE_WITH_ROUTE_HOST"
             - name: ADMIN_USERNAME
-              value: "alim"
+              value: "developer"
           volumeMounts:
             - name: data
               mountPath: /data

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -8,12 +8,23 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
-from app.models import QueueItem, ISTANBUL_TZ
+from app.models import QueueItem, Comment, ISTANBUL_TZ
 
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory="app/templates")
 
 USER_NAMES = settings.ALLOWED_USERS
+
+
+def _comment_to_dict(c):
+    display_name = USER_NAMES.get(c.username, c.username)
+    return {
+        "id": c.id,
+        "username": c.username,
+        "display_name": display_name,
+        "text": c.text,
+        "created_at": c.created_at.strftime("%d.%m.%Y %H:%M"),
+    }
 
 
 def _item_to_dict(item, position=None):
@@ -30,6 +41,7 @@ def _item_to_dict(item, position=None):
         if item.completed_at
         else None,
         "position": position,
+        "comments": [_comment_to_dict(c) for c in item.comments],
     }
 
 
@@ -120,3 +132,26 @@ async def complete_item(
         return JSONResponse({"ok": True})
 
     return RedirectResponse(url="/admin", status_code=303)
+
+
+@router.post("/{item_id}/comment")
+async def admin_add_comment(
+    request: Request,
+    item_id: int,
+    text: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    username = get_current_user(request)
+    if not username or username != settings.ADMIN_USERNAME:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    item = db.query(QueueItem).filter(QueueItem.id == item_id).first()
+    if not item:
+        return JSONResponse({"error": "not found"}, status_code=404)
+
+    comment = Comment(item_id=item_id, username=username, text=text)
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

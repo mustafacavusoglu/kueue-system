@@ -7,11 +7,22 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
-from app.models import QueueItem
+from app.models import QueueItem, Comment
 
 router = APIRouter(prefix="/queue")
 
 USER_NAMES = settings.ALLOWED_USERS
+
+
+def _comment_to_dict(c):
+    display_name = USER_NAMES.get(c.username, c.username)
+    return {
+        "id": c.id,
+        "username": c.username,
+        "display_name": display_name,
+        "text": c.text,
+        "created_at": c.created_at.strftime("%d.%m.%Y %H:%M"),
+    }
 
 
 def _item_to_dict(item, position=None):
@@ -24,6 +35,7 @@ def _item_to_dict(item, position=None):
         "display_name": display_name,
         "created_at": item.created_at.strftime("%d.%m.%Y %H:%M"),
         "position": position,
+        "comments": [_comment_to_dict(c) for c in item.comments],
     }
 
 
@@ -144,3 +156,30 @@ async def all_queue(request: Request, db: Session = Depends(get_db)):
     items = [_item_to_dict(item, i + 1) for i, item in enumerate(waiting)]
 
     return JSONResponse({"items": items})
+
+
+@router.post("/{item_id}/comment")
+async def add_comment(
+    request: Request,
+    item_id: int,
+    text: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    username = get_current_user(request)
+    if not username:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    item = (
+        db.query(QueueItem)
+        .filter(QueueItem.id == item_id, QueueItem.username == username)
+        .first()
+    )
+    if not item:
+        return JSONResponse({"error": "not found"}, status_code=404)
+
+    comment = Comment(item_id=item_id, username=username, text=text)
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})
