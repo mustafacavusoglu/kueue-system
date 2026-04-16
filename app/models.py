@@ -21,7 +21,10 @@ class QueueItem(Base):
     )
     completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     comments: Mapped[list["Comment"]] = relationship(
-        "Comment", back_populates="item", order_by="Comment.created_at"
+        "Comment",
+        back_populates="item",
+        order_by="Comment.created_at",
+        cascade="all, delete-orphan",
     )
 
 
