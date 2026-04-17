@@ -37,7 +37,7 @@
 
     <div style="display: flex; gap: 6px; margin-bottom: 20px;">
         <button onclick="switchTab('waiting')" class="tab-btn active" data-tab="waiting">
-            Bekleyenler (<span id="tab-waiting-count" hx-get="/partial/admin/stats" hx-trigger="load, sse:queue_updated" hx-swap="none" _="on htmx:afterRequest get the innerText of #stat-waiting-value then set #tab-waiting-count's innerText to it">0</span>)
+            Bekleyenler (<span id="tab-waiting-count">0</span>)
         </button>
         <button onclick="switchTab('completed')" class="tab-btn" data-tab="completed">
             Tamamlananlar (<span id="tab-completed-count">0</span>)
@@ -123,6 +123,12 @@
 
     document.body.addEventListener('htmx:afterSettle', function() {
         initSortable();
+        var w = document.getElementById('stat-waiting-value');
+        var c = document.getElementById('stat-completed-value');
+        var d = document.getElementById('stat-deleted-value');
+        if (w) document.getElementById('tab-waiting-count').innerText = w.innerText;
+        if (c) document.getElementById('tab-completed-count').innerText = c.innerText;
+        if (d) document.getElementById('tab-deleted-count').innerText = d.innerText;
     });
 
     setTimeout(initSortable, 500);
