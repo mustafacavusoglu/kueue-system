@@ -16,12 +16,13 @@ class Settings(BaseSettings):
     APP_URL: str = "http://localhost:8080"
     ALLOWED_GROUP: str = "INTERTECH-MLOps"
     ALLOWED_USERS: dict[str, str] = {
-        "D49831" :"Ali MUŞDU",
-        "D60086" : "Dilek ARABUL",
-        "D60219" : "Zeynep ÇETİN GÜNEŞ",
-        "D63746" : "Doğukan POLATEL",
-        "D67711" : "Yiğit Baran UÇAR",
-        "D67712" : "Mustafa ÇAVUŞOĞLU",
+        "D49831": "Ali MUŞDU",
+        "D60086": "Dilek ARABUL",
+        "D60219": "Zeynep ÇETİN GÜNEŞ",
+        "D63746": "Doğukan POLATEL",
+        "D67711": "Yiğit Baran UÇAR",
+        "D67712": "Mustafa ÇAVUŞOĞLU",
+        "developer": "Developer",
     }
 
     @property
