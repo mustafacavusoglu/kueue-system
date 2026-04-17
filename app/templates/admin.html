@@ -50,25 +50,25 @@
     <div id="waiting-tab">
         <div id="waiting-list"
              hx-get="/partial/admin/waiting"
-             hx-trigger="load, sse:queue_updated, sse:queue_reordered"
+             hx-trigger="load, sse:queue_updated, sse:queue_reordered, sse:comment_added"
              hx-target="this"
              hx-swap="innerHTML">
-        </div>
-    </div>
+         </div>
+     </div>
 
-    <div id="completed-tab" style="display: none;">
-        <div id="completed-list"
-             hx-get="/partial/admin/completed"
-             hx-trigger="load, sse:queue_updated"
-             hx-target="this"
-             hx-swap="innerHTML">
-        </div>
-    </div>
+     <div id="completed-tab" style="display: none;">
+         <div id="completed-list"
+              hx-get="/partial/admin/completed"
+              hx-trigger="load, sse:queue_updated, sse:comment_added"
+              hx-target="this"
+              hx-swap="innerHTML">
+         </div>
+     </div>
 
-    <div id="deleted-tab" style="display: none;">
-        <div id="deleted-list"
-             hx-get="/partial/admin/deleted"
-             hx-trigger="load, sse:queue_updated"
+     <div id="deleted-tab" style="display: none;">
+         <div id="deleted-list"
+              hx-get="/partial/admin/deleted"
+              hx-trigger="load, sse:queue_updated, sse:comment_added"
              hx-target="this"
              hx-swap="innerHTML">
         </div>
@@ -194,6 +194,7 @@
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'text=' + encodeURIComponent(text),
         }).then(function(r) { return r.json(); }).then(function() {
+            input.value = '';
             showToast('Yorum eklendi!', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
