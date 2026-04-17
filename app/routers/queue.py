@@ -9,6 +9,7 @@ from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.models import QueueItem, Comment, ISTANBUL_TZ
+from app.sse import event_bus
 
 router = APIRouter(prefix="/queue")
 
@@ -69,6 +70,8 @@ async def add_to_queue(
     db.commit()
     db.refresh(item)
 
+    await event_bus.broadcast("queue_updated")
+
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
         all_waiting = _waiting_order(
@@ -101,6 +104,7 @@ async def delete_from_queue(
         item.status = "deleted"
         item.deleted_at = datetime.now(ISTANBUL_TZ)
         db.commit()
+        await event_bus.broadcast("queue_updated")
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
@@ -205,5 +209,7 @@ async def add_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
+
+    await event_bus.broadcast("comment_added")
 
     return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

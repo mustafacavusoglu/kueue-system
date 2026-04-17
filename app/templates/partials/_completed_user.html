@@ -1,0 +1,44 @@
+{% if completed|length == 0 %}
+<div class="glass" style="padding: 36px 20px;">
+    <div class="empty-state">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p style="font-size: 14px;">Tamamlanan kayıt yok.</p>
+    </div>
+</div>
+{% else %}
+{% for item in completed %}
+{% set is_own = item.username == current_user %}
+<div class="glass-card {% if is_own %}own-item{% else %}other-item{% endif %}" data-id="{{ item.id }}" style="padding: 14px 20px; margin-bottom: 6px; opacity: 0.75;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 36px; height: 36px; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+        <div style="flex: 1; min-width: 0;">
+            <div style="color: var(--text-primary); font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.subject }}</div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 3px;">
+                <span style="color: var(--gold-badge-text); font-size: 11px; font-weight: 600;">{{ user_names.get(item.username, item.username) }}</span>
+                <span style="color: var(--text-muted); font-size: 11px;">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                {% if item.completed_at %}
+                <span style="color: var(--green-text); font-size: 11px; opacity: 0.7;">Tamamlanma: {{ item.completed_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <span class="badge-completed" style="flex-shrink: 0;">Tamamlandı</span>
+    </div>
+    {% if item.comments|length > 0 %}
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+        {% for c in item.comments %}
+        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+            <div style="flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-400); margin-top: 6px;"></div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: var(--gold-badge-text); font-size: 11px; font-weight: 600;">{{ user_names.get(c.username, c.username) }}</span>
+                    <span style="color: var(--text-muted); font-size: 10px;">{{ c.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px; margin-top: 1px; word-break: break-word;">{{ c.text }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}

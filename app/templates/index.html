@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Baklava AI - Panel{% endblock %}
 {% block content %}
+<div hx-ext="sse" sse-connect="/events">
+
 <nav class="navbar">
     <div style="max-width: 1000px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 14px;">
@@ -27,15 +29,30 @@
 
 <div style="max-width: 1000px; margin: 0 auto; padding: 28px 24px;">
 
-    <div id="queue-visual" class="glass" style="padding: 20px 28px; margin-bottom: 24px; display: none;">
+    <div id="queue-visual" class="glass" style="padding: 20px 28px; margin-bottom: 24px; {% if not global_position %}display: none;{% endif %}"
+         hx-get="/partial/queue-visual"
+         hx-trigger="sse:queue_updated, sse:queue_reordered"
+         hx-target="#queue-visual"
+         hx-swap="innerHTML">
+        {% if global_position %}
         <div style="display: flex; align-items: center; gap: 14px;">
-            <div id="queue-visual-position" style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--gold-400), var(--gold-600)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #78350f; flex-shrink: 0;"></div>
+            <div style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--gold-400), var(--gold-600)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #78350f; flex-shrink: 0;">{{ global_position }}</div>
             <div>
-                <div id="queue-visual-text" style="color: var(--text-primary); font-weight: 600; font-size: 15px;"></div>
+                <div style="color: var(--text-primary); font-weight: 600; font-size: 15px;">Kuyrukta {{ global_position }}. sıradasınız</div>
                 <div style="color: var(--text-muted); font-size: 12px; margin-top: 2px;">Ekip lideri yakında sizinle ilgilenecek</div>
             </div>
         </div>
+        {% endif %}
     </div>
+
+    <script>
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            var target = evt.detail.target;
+            if (target && target.id === 'queue-visual') {
+                target.style.display = target.textContent.trim().length > 0 ? '' : 'none';
+            }
+        });
+    </script>
 
     <div class="glass" style="padding: 24px; margin-bottom: 24px;">
         <h2 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
@@ -55,266 +72,52 @@
         </form>
     </div>
 
-    <div>
-        <h2 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" fill="none" stroke="var(--gold-500)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-            Kuyruğum
-        </h2>
-        <div id="items-list"></div>
-    </div>
-
-    <div style="margin-top: 28px;">
-        <h2 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-            <svg width="16" height="16" fill="none" stroke="var(--gold-500)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
-            Genel Kuyruk
-            <span id="all-queue-count" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">(0 kişi)</span>
-        </h2>
-        <div id="all-queue-list"></div>
-    </div>
-
-    <div class="accordion" style="margin-top: 28px;">
-        <button class="accordion-header" onclick="toggleAccordion('completed')">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span style="color:var(--text-primary);font-weight:700;font-size:15px;">Tamamlananlar</span>
-                <span id="completed-count" style="font-size:12px;font-weight:600;color:var(--text-muted);">(0)</span>
-            </div>
-            <svg class="accordion-chevron" id="chevron-completed" width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+    <div style="display: flex; gap: 6px; margin-bottom: 20px;">
+        <button onclick="switchTab('waiting')" class="tab-btn active" data-tab="waiting">
+            Bekleyenler
         </button>
-        <div class="accordion-body" id="accordion-completed" style="max-height:0;overflow:hidden;transition:max-height 0.35s ease;">
-            <div id="completed-list" style="padding-top:4px;"></div>
+        <button onclick="switchTab('completed')" class="tab-btn" data-tab="completed">
+            Tamamlananlar
+        </button>
+        <button onclick="switchTab('deleted')" class="tab-btn" data-tab="deleted">
+            Silinenler
+        </button>
+    </div>
+
+    <div id="waiting-tab">
+        <div id="queue-list"
+             hx-get="/partial/all-queue"
+             hx-trigger="load, sse:queue_updated, sse:queue_reordered, sse:comment_added"
+             hx-target="this"
+             hx-swap="innerHTML">
         </div>
     </div>
 
-    <div class="accordion" style="margin-top: 12px;">
-        <button class="accordion-header" onclick="toggleAccordion('deleted')">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
-                <span style="color:var(--text-primary);font-weight:700;font-size:15px;">Silinenler</span>
-                <span id="deleted-count" style="font-size:12px;font-weight:600;color:var(--text-muted);">(0)</span>
-            </div>
-            <svg class="accordion-chevron" id="chevron-deleted" width="20" height="20" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div class="accordion-body" id="accordion-deleted" style="max-height:0;overflow:hidden;transition:max-height 0.35s ease;">
-            <div id="deleted-list" style="padding-top:4px;"></div>
+    <div id="completed-tab" style="display: none;">
+        <div id="completed-list"
+             hx-get="/partial/completed"
+             hx-trigger="load, sse:queue_updated"
+             hx-target="this"
+             hx-swap="innerHTML">
         </div>
     </div>
+
+    <div id="deleted-tab" style="display: none;">
+        <div id="deleted-list"
+             hx-get="/partial/deleted"
+             hx-trigger="load, sse:queue_updated"
+             hx-target="this"
+             hx-swap="innerHTML">
+        </div>
+    </div>
+
+</div>
+
 </div>
 
 <script>
 (function() {
     updateThemeIcon();
-
-    function escapeHtml(s) {
-        var d = document.createElement('div');
-        d.textContent = s;
-        return d.innerHTML;
-    }
-
-    function renderComments(item) {
-        if (!item.comments || item.comments.length === 0) return '';
-        var html = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);">';
-        item.comments.forEach(function(c) {
-            html += '<div style="display:flex;gap:8px;margin-bottom:6px;">' +
-                '<div style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--gold-400);margin-top:6px;"></div>' +
-                '<div style="flex:1;min-width:0;">' +
-                    '<div style="display:flex;align-items:center;gap:6px;">' +
-                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(c.display_name) + '</span>' +
-                        '<span style="color:var(--text-muted);font-size:10px;">' + c.created_at + '</span>' +
-                    '</div>' +
-                    '<div style="color:var(--text-secondary);font-size:12px;margin-top:1px;word-break:break-word;">' + escapeHtml(c.text) + '</div>' +
-                '</div>' +
-            '</div>';
-        });
-        html += '</div>';
-        return html;
-    }
-
-    function renderCommentForm(item) {
-        return '<div style="margin-top:8px;display:flex;gap:8px;">' +
-            '<input type="text" id="comment-input-' + item.id + '" class="input-field" style="flex:1;height:34px;font-size:12px;" placeholder="Yorum yaz...">' +
-            '<button class="btn-primary" style="height:34px;padding:0 12px;font-size:12px;" onclick="addUserComment(' + item.id + ')">Gönder</button>' +
-        '</div>';
-    }
-
-    function renderItem(item) {
-        var posHtml = '';
-        if (item.status === 'waiting' && item.position) {
-            posHtml = '<div class="position-badge">' + item.position + '</div>';
-        } else if (item.status === 'completed') {
-            posHtml = '<div style="width:36px;height:36px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:10px;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>';
-        } else if (item.status === 'deleted') {
-            posHtml = '<div style="width:36px;height:36px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>';
-        } else {
-            posHtml = '<div style="width:36px;height:36px;background:var(--bg-card);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);">-</div>';
-        }
-
-        var badgeHtml = '';
-        if (item.status === 'waiting') {
-            badgeHtml = '<span class="badge-waiting"><span class="pulse-dot" style="width:6px;height:6px;"></span>Bekliyor</span>';
-        } else if (item.status === 'completed') {
-            badgeHtml = '<span class="badge-completed">Tamamlandı</span>';
-        } else if (item.status === 'deleted') {
-            badgeHtml = '<span class="badge-deleted">Silindi</span>';
-        }
-
-        var deleteHtml = '';
-        if (item.status !== 'deleted') {
-            deleteHtml = '<button class="btn-danger btn-icon-sm" onclick="deleteItem(' + item.id + ', this)" title="Sil"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>';
-        }
-
-        var commentFormHtml = item.status === 'waiting' ? renderCommentForm(item) : '';
-
-        var itemStyle = item.status === 'completed' ? 'opacity:0.65;' : (item.status === 'deleted' ? 'opacity:0.55;' : '');
-        var subjectStyle = item.status === 'deleted' ? 'text-decoration:line-through;opacity:0.6;' : '';
-
-        return '<div class="glass-card item-enter" data-id="' + item.id + '" style="padding:16px 20px;margin-bottom:8px;' + itemStyle + '">' +
-            '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;">' +
-                '<div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">' +
-                    posHtml +
-                    '<div style="flex:1;min-width:0;">' +
-                        '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' + subjectStyle + '">' + escapeHtml(item.subject) + '</div>' +
-                        (item.description ? '<div style="color:var(--text-muted);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.description) + '</div>' : '') +
-                    '</div>' +
-                '</div>' +
-                '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">' +
-                    '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                    badgeHtml +
-                    deleteHtml +
-                '</div>' +
-            '</div>' +
-            renderComments(item) +
-            commentFormHtml +
-        '</div>';
-    }
-
-    function renderEmpty(msg) {
-        return '<div class="glass" style="padding:36px 20px;"><div class="empty-state">' +
-            '<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' +
-            '<p style="font-size:14px;">' + msg + '</p></div></div>';
-    }
-
-    function updateUI(data) {
-        var waiting = [];
-        var deleted = [];
-        if (data.items) {
-            data.items.forEach(function(item) {
-                if (item.status === 'deleted') {
-                    deleted.push(item);
-                } else {
-                    waiting.push(item);
-                }
-            });
-        }
-
-        var list = document.getElementById('items-list');
-        if (waiting.length === 0) {
-            list.innerHTML = renderEmpty('Henüz kuyrukta kaydınız yok.');
-        } else {
-            list.innerHTML = waiting.map(renderItem).join('');
-        }
-
-        var badge = document.getElementById('position-badge');
-        var visual = document.getElementById('queue-visual');
-        if (data.global_position) {
-            badge.style.display = '';
-            document.getElementById('position-number').textContent = data.global_position;
-            visual.style.display = '';
-            document.getElementById('queue-visual-position').textContent = data.global_position;
-            document.getElementById('queue-visual-text').textContent = 'Kuyrukta ' + data.global_position + '. sıradasınız';
-        } else {
-            badge.style.display = 'none';
-            visual.style.display = 'none';
-        }
-
-        updateDeletedAccordion(deleted);
-    }
-
-    function renderCompletedItem(item) {
-        return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;opacity:0.7;">' +
-            '<div style="display:flex;align-items:center;gap:14px;">' +
-                '<div style="width:36px;height:36px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>' +
-                '<div style="flex:1;min-width:0;">' +
-                    '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
-                    '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
-                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
-                        '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                        (item.completed_at ? '<span style="color:var(--green-text);font-size:11px;opacity:0.7;">Tamamlanma: ' + item.completed_at + '</span>' : '') +
-                    '</div>' +
-                '</div>' +
-                '<span class="badge-completed" style="flex-shrink:0;">Tamamlandı</span>' +
-            '</div>' +
-            renderComments(item) +
-        '</div>';
-    }
-
-    function renderDeletedItem(item) {
-        return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;opacity:0.55;">' +
-            '<div style="display:flex;align-items:center;gap:14px;">' +
-                '<div style="width:36px;height:36px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>' +
-                '<div style="flex:1;min-width:0;">' +
-                    '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:line-through;opacity:0.6;">' + escapeHtml(item.subject) + '</div>' +
-                    '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
-                        '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
-                        '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                        (item.deleted_at ? '<span style="color:var(--red-text);font-size:11px;opacity:0.7;">Silinme: ' + item.deleted_at + '</span>' : '') +
-                    '</div>' +
-                '</div>' +
-                '<span class="badge-deleted" style="flex-shrink:0;">Silindi</span>' +
-            '</div>' +
-            renderComments(item) +
-        '</div>';
-    }
-
-    function updateCompletedAccordion(items) {
-        document.getElementById('completed-count').textContent = '(' + items.length + ')';
-        var list = document.getElementById('completed-list');
-        list.innerHTML = items.length > 0
-            ? items.map(renderCompletedItem).join('')
-            : renderEmpty('Tamamlanan kayıt yok.');
-    }
-
-    function updateDeletedAccordion(items) {
-        document.getElementById('deleted-count').textContent = '(' + items.length + ')';
-        var list = document.getElementById('deleted-list');
-        list.innerHTML = items.length > 0
-            ? items.map(renderDeletedItem).join('')
-            : renderEmpty('Silinen kayıt yok.');
-    }
-
-    function loadItems() {
-        fetch('/queue/my').then(function(r) { return r.json(); }).then(updateUI);
-    }
-
-    function loadAllQueue() {
-        fetch('/queue/all').then(function(r) { return r.json(); }).then(function(data) {
-            document.getElementById('all-queue-count').textContent = '(' + data.items.length + ' kişi)';
-            var list = document.getElementById('all-queue-list');
-            list.innerHTML = data.items.length > 0
-                ? data.items.map(function(item) {
-                    return '<div class="glass-card" style="padding:14px 20px;margin-bottom:6px;">' +
-                        '<div style="display:flex;align-items:center;gap:14px;">' +
-                            '<div class="position-badge">' + item.position + '</div>' +
-                            '<div style="flex:1;min-width:0;">' +
-                                '<div style="color:var(--text-primary);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.subject) + '</div>' +
-                                '<div style="display:flex;align-items:center;gap:10px;margin-top:3px;">' +
-                                    '<span style="color:var(--gold-badge-text);font-size:11px;font-weight:600;">' + escapeHtml(item.display_name) + '</span>' +
-                                    '<span style="color:var(--text-muted);font-size:11px;">' + item.created_at + '</span>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                        renderComments(item) +
-                    '</div>';
-                }).join('')
-                : renderEmpty('Kuyrukta bekleyen kimse yok.');
-        });
-    }
-
-    function loadCompleted() {
-        fetch('/queue/completed').then(function(r) { return r.json(); }).then(function(data) {
-            updateCompletedAccordion(data.items);
-        });
-    }
 
     document.getElementById('add-form').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -331,9 +134,6 @@
             subject.value = '';
             desc.value = '';
             subject.focus();
-            loadItems();
-            loadAllQueue();
-            loadCompleted();
             showToast('Kuyruğa eklendi!', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
@@ -351,26 +151,11 @@
             method: 'POST',
             headers: { 'Accept': 'application/json' },
         }).then(function(r) { return r.json(); }).then(function() {
-            loadItems();
-            loadAllQueue();
-            loadCompleted();
             showToast('Kayıt silindi', 'success');
         }).catch(function() {
             row.classList.remove('item-exit');
             showToast('Hata oluştu', 'error');
         });
-    };
-
-    window.toggleAccordion = function(name) {
-        var body = document.getElementById('accordion-' + name);
-        var chevron = document.getElementById('chevron-' + name);
-        if (body.style.maxHeight && body.style.maxHeight !== '0px') {
-            body.style.maxHeight = '0px';
-            chevron.style.transform = 'rotate(0deg)';
-        } else {
-            body.style.maxHeight = body.scrollHeight + 'px';
-            chevron.style.transform = 'rotate(180deg)';
-        }
     };
 
     window.addUserComment = function(itemId) {
@@ -384,8 +169,6 @@
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'text=' + encodeURIComponent(text),
         }).then(function(r) { return r.json(); }).then(function() {
-            loadItems();
-            loadAllQueue();
             showToast('Yorum eklendi!', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
@@ -394,9 +177,14 @@
         });
     };
 
-    loadItems();
-    loadAllQueue();
-    loadCompleted();
+    window.switchTab = function(tab) {
+        document.getElementById('waiting-tab').style.display = tab === 'waiting' ? '' : 'none';
+        document.getElementById('completed-tab').style.display = tab === 'completed' ? '' : 'none';
+        document.getElementById('deleted-tab').style.display = tab === 'deleted' ? '' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
+        });
+    };
 })();
 </script>
 {% endblock %}

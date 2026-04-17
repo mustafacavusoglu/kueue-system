@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, Request, Depends, Form
@@ -10,6 +11,7 @@ from app.auth import get_current_user
 from app.config import settings
 from app.database import get_db
 from app.models import QueueItem, Comment, ISTANBUL_TZ
+from app.sse import event_bus
 
 router = APIRouter(prefix="/admin")
 templates = Jinja2Templates(directory="app/templates")
@@ -146,6 +148,7 @@ async def complete_item(
         item.status = "completed"
         item.completed_at = datetime.now(ISTANBUL_TZ)
         db.commit()
+        await event_bus.broadcast("queue_updated")
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
@@ -169,6 +172,7 @@ async def admin_delete_item(
         item.status = "deleted"
         item.deleted_at = datetime.now(ISTANBUL_TZ)
         db.commit()
+        await event_bus.broadcast("queue_updated")
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
@@ -203,6 +207,7 @@ async def move_item_up(
         waiting[idx].queue_order,
     )
     db.commit()
+    await event_bus.broadcast("queue_updated")
 
     return JSONResponse({"ok": True})
 
@@ -233,6 +238,34 @@ async def move_item_down(
         waiting[idx].queue_order,
     )
     db.commit()
+    await event_bus.broadcast("queue_updated")
+
+    return JSONResponse({"ok": True})
+
+
+@router.post("/reorder")
+async def reorder_queue(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    username = get_current_user(request)
+    if not username or username != settings.ADMIN_USERNAME:
+        return JSONResponse({"error": "unauthorized"}, status_code=401)
+
+    body = await request.json()
+    task_ids = body if isinstance(body, list) else body.get("order", [])
+
+    for index, task_id in enumerate(task_ids):
+        item = (
+            db.query(QueueItem)
+            .filter(QueueItem.id == task_id, QueueItem.status == "waiting")
+            .first()
+        )
+        if item:
+            item.queue_order = index * 10
+
+    db.commit()
+    await event_bus.broadcast("queue_reordered")
 
     return JSONResponse({"ok": True})
 
@@ -256,5 +289,7 @@ async def admin_add_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
+
+    await event_bus.broadcast("comment_added")
 
     return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

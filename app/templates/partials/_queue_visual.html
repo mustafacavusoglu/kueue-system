@@ -1,0 +1,9 @@
+{% if global_position %}
+<div style="display: flex; align-items: center; gap: 14px;">
+    <div id="queue-visual-position" style="width: 44px; height: 44px; background: linear-gradient(135deg, var(--gold-400), var(--gold-600)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #78350f; flex-shrink: 0;">{{ global_position }}</div>
+    <div>
+        <div style="color: var(--text-primary); font-weight: 600; font-size: 15px;">Kuyrukta {{ global_position }}. sıradasınız</div>
+        <div style="color: var(--text-muted); font-size: 12px; margin-top: 2px;">Ekip lideri yakında sizinle ilgilenecek</div>
+    </div>
+</div>
+{% endif %}

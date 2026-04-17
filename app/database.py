@@ -9,8 +9,15 @@ if db_dir:
     os.makedirs(db_dir, exist_ok=True)
 
 engine = create_engine(
-    f"sqlite:///{settings.DATABASE_PATH}", connect_args={"check_same_thread": False}
+    f"sqlite:///{settings.DATABASE_PATH}",
+    connect_args={"check_same_thread": False},
+    pool_pre_ping=True,
 )
+
+with engine.connect() as _conn:
+    _conn.execute(text("PRAGMA journal_mode=WAL"))
+    _conn.execute(text("PRAGMA busy_timeout=5000"))
+    _conn.commit()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 

@@ -1,0 +1,67 @@
+{% if waiting|length == 0 %}
+<div class="glass" style="padding: 36px 20px;">
+    <div class="empty-state">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p style="font-size: 14px;">Henüz kuyrukta kaydınız yok.</p>
+    </div>
+</div>
+{% else %}
+{% for item in waiting %}
+<div class="glass-card item-enter" data-id="{{ item.id }}" style="padding: 16px 20px; margin-bottom: 8px; {% if item.status == 'completed' %}opacity: 0.65;{% elif item.status == 'deleted' %}opacity: 0.55;{% endif %}">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
+            {% if item.status == 'waiting' and item.position %}
+            <div class="position-badge">{{ item.position }}</div>
+            {% elif item.status == 'completed' %}
+            <div style="width: 36px; height: 36px; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" fill="none" stroke="var(--green-text)" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+            {% elif item.status == 'deleted' %}
+            <div style="width: 36px; height: 36px; background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 10px; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" fill="none" stroke="var(--red-text)" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div>
+            {% else %}
+            <div style="width: 36px; height: 36px; background: var(--bg-card); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--text-muted);">-</div>
+            {% endif %}
+            <div style="flex: 1; min-width: 0;">
+                <div style="color: var(--text-primary); font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; {% if item.status == 'deleted' %}text-decoration: line-through; opacity: 0.6;{% endif %}">{{ item.subject }}</div>
+                {% if item.description %}
+                <div style="color: var(--text-muted); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ item.description }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+            <span style="color: var(--text-muted); font-size: 11px;">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            {% if item.status == 'waiting' %}
+            <span class="badge-waiting"><span class="pulse-dot" style="width: 6px; height: 6px;"></span>Bekliyor</span>
+            {% elif item.status == 'completed' %}
+            <span class="badge-completed">Tamamlandı</span>
+            {% elif item.status == 'deleted' %}
+            <span class="badge-deleted">Silindi</span>
+            {% endif %}
+            {% if item.status != 'deleted' %}
+            <button class="btn-danger btn-icon-sm" onclick="deleteItem({{ item.id }}, this)" title="Sil"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            {% endif %}
+        </div>
+    </div>
+    {% if item.comments|length > 0 %}
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);">
+        {% for c in item.comments %}
+        <div style="display: flex; gap: 8px; margin-bottom: 6px;">
+            <div style="flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-400); margin-top: 6px;"></div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="color: var(--gold-badge-text); font-size: 11px; font-weight: 600;">{{ user_names.get(c.username, c.username) }}</span>
+                    <span style="color: var(--text-muted); font-size: 10px;">{{ c.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px; margin-top: 1px; word-break: break-word;">{{ c.text }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if item.status == 'waiting' %}
+    <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <input type="text" id="comment-input-{{ item.id }}" class="input-field" style="flex: 1; height: 34px; font-size: 12px;" placeholder="Yorum yaz...">
+        <button class="btn-primary" style="height: 34px; padding: 0 12px; font-size: 12px;" onclick="addUserComment({{ item.id }})">Gönder</button>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}

@@ -1,0 +1,18 @@
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;">
+    <div class="glass" style="padding: 20px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, var(--gold-400), var(--gold-600)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ waiting_count }}</div>
+        <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Bekleyen</div>
+    </div>
+    <div class="glass" style="padding: 20px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #86efac, #22c55e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ completed_count }}</div>
+        <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Tamamlanan</div>
+    </div>
+    <div class="glass" style="padding: 20px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #fca5a5, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ deleted_count }}</div>
+        <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Silinen</div>
+    </div>
+    <div class="glass" style="padding: 20px; text-align: center;">
+        <div style="font-size: 32px; font-weight: 900; background: linear-gradient(135deg, #93c5fd, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ waiting_count + completed_count + deleted_count }}</div>
+        <div style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;">Toplam</div>
+    </div>
+</div>

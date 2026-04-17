@@ -354,6 +354,11 @@ body {
   font-size: 14px;
   border-radius: 10px;
   flex-shrink: 0;
+  cursor: grab;
+}
+
+.position-badge:active {
+  cursor: grabbing;
 }
 
 .navbar {
@@ -666,4 +671,35 @@ label {
 
 .accordion-body > div {
   padding-bottom: 12px;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  border: 2px dashed var(--gold-500) !important;
+}
+
+.sortable-drag {
+  opacity: 0.9;
+  transform: rotate(2deg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.own-item {
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  background: rgba(251, 191, 36, 0.06) !important;
+}
+
+[data-theme="light"] .own-item {
+  border-color: rgba(180, 83, 9, 0.2) !important;
+  background: rgba(245, 158, 11, 0.06) !important;
+}
+
+.own-item:hover {
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  background: rgba(251, 191, 36, 0.1) !important;
+}
+
+.other-item {
+  border-color: var(--border);
+  background: var(--bg-card);
 }
