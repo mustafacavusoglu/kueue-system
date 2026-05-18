@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-ALLOWED_USERS = set(settings.ALLOWED_USERS.keys())
+ALLOWED_USERS = set(u.upper() for u in settings.ALLOWED_USERS.keys())
 
 
 oauth = OAuth()
