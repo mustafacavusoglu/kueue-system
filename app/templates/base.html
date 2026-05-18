@@ -39,6 +39,22 @@
             c.appendChild(t);
             setTimeout(function() { t.remove(); }, 3200);
         }
+        var _notifCount = 0;
+        var _baseTitle = document.title;
+        function updateTabTitle() {
+            document.title = _notifCount > 0 ? '(' + _notifCount + ') ' + _baseTitle : _baseTitle;
+        }
+        function addNotification() {
+            _notifCount++;
+            updateTabTitle();
+        }
+        function clearNotifications() {
+            _notifCount = 0;
+            updateTabTitle();
+        }
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) clearNotifications();
+        });
     </script>
 </head>
 <body class="animated-bg">
@@ -46,6 +62,9 @@
         <div class="diamond"></div><div class="diamond"></div><div class="diamond"></div>
         <div class="diamond"></div><div class="diamond"></div><div class="diamond"></div>
         <div class="diamond"></div><div class="diamond"></div><div class="diamond"></div><div class="diamond"></div>
+    </div>
+    <div class="top-right-baklava" title="Baklava AI">
+        <div class="baklava-inner">B</div>
     </div>
     <div style="position: relative; z-index: 1;">
         {% block content %}{% endblock %}

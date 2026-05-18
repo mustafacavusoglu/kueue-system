@@ -131,6 +131,15 @@
         if (d) document.getElementById('tab-deleted-count').innerText = d.innerText;
     });
 
+    document.body.addEventListener('htmx:sseMessage', function(evt) {
+        if (evt.detail.type === 'notification') {
+            var data = evt.detail.data || '';
+            if (data.startsWith("{{ username }}:")) {
+                addNotification();
+            }
+        }
+    });
+
     setTimeout(initSortable, 500);
 
     window.completeItem = function(id, btn) {

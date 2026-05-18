@@ -12,11 +12,12 @@ from sqlalchemy import func
 
 from app.config import settings
 from app.database import init_db, get_db
-from app.models import QueueItem
+from app.models import QueueItem, UserCredit
 from app.auth import router as auth_router, get_current_user
 from app.routers.queue import router as queue_router
 from app.routers.admin import router as admin_router
 from app.routers.partials import router as partials_router
+from app.routers.feature_requests import router as feature_requests_router
 from app.sse import event_bus
 
 
@@ -39,6 +40,7 @@ app.include_router(auth_router)
 app.include_router(queue_router)
 app.include_router(admin_router)
 app.include_router(partials_router)
+app.include_router(feature_requests_router)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -88,6 +90,22 @@ async def dashboard(request: Request, db=Depends(get_db)):
                 (i for i, w in enumerate(all_waiting, 1) if w.id == item.id), None
             )
 
+    incoming = (
+        db.query(QueueItem)
+        .filter(
+            QueueItem.status == "waiting",
+            QueueItem.target_user == username,
+            QueueItem.username != username,
+        )
+        .order_by(
+            func.coalesce(QueueItem.queue_order, 999999), QueueItem.created_at.asc()
+        )
+        .all()
+    )
+
+    uc = db.query(UserCredit).filter(UserCredit.username == username).first()
+    credits = uc.credits if uc else 5
+
     is_admin = username == settings.ADMIN_USERNAME
 
     return templates.TemplateResponse(
@@ -96,10 +114,13 @@ async def dashboard(request: Request, db=Depends(get_db)):
             "request": request,
             "username": username,
             "my_items": my_items,
+            "incoming": incoming,
             "global_position": global_position,
             "is_admin": is_admin,
             "app_name": settings.APP_NAME,
             "admin_username": settings.ADMIN_USERNAME,
+            "credits": credits,
+            "user_names": settings.ALLOWED_USERS,
         },
     )
 

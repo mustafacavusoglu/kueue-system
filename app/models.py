@@ -13,6 +13,9 @@ class QueueItem(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    target_user: Mapped[str] = mapped_column(
+        String(255), nullable=True, index=True
+    )
     subject: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="waiting")
@@ -43,3 +46,24 @@ class Comment(Base):
         DateTime, default=lambda: datetime.now(ISTANBUL_TZ)
     )
     item: Mapped["QueueItem"] = relationship("QueueItem", back_populates="comments")
+
+
+class FeatureRequest(Base):
+    __tablename__ = "feature_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    requested_by: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=lambda: datetime.now(ISTANBUL_TZ)
+    )
+
+
+class UserCredit(Base):
+    __tablename__ = "user_credits"
+
+    username: Mapped[str] = mapped_column(
+        String(255), primary_key=True, nullable=False
+    )
+    credits: Mapped[int] = mapped_column(Integer, nullable=False, default=5)

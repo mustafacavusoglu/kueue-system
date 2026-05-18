@@ -266,3 +266,49 @@ async def partial_admin_stats(request: Request, db: Session = Depends(get_db)):
             "deleted_count": deleted_count or 0,
         },
     )
+
+
+@router.get("/incoming-queue", response_class=HTMLResponse)
+async def partial_incoming_queue(request: Request, db: Session = Depends(get_db)):
+    username = get_current_user(request)
+    if not username:
+        return HTMLResponse("")
+
+    incoming = _waiting_order(
+        db.query(QueueItem).filter(
+            QueueItem.status == "waiting",
+            QueueItem.target_user == username,
+            QueueItem.username != username,
+        )
+    ).all()
+
+    for idx, item in enumerate(incoming, 1):
+        item.position = idx
+
+    return templates.TemplateResponse(
+        "partials/_incoming_queue.html",
+        {
+            "request": request,
+            "incoming": incoming,
+            "user_names": USER_NAMES,
+            "current_user": username,
+        },
+    )
+
+
+@router.get("/credits-badge", response_class=HTMLResponse)
+async def partial_credits_badge(request: Request, db: Session = Depends(get_db)):
+    username = get_current_user(request)
+    if not username:
+        return HTMLResponse("")
+
+    from app.models import UserCredit
+
+    uc = db.query(UserCredit).filter(UserCredit.username == username).first()
+    credits = uc.credits if uc else 5
+
+    return HTMLResponse(
+        f'<span id="credits-badge" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--gold-badge-bg); border: 1px solid var(--gold-glow-border); border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--gold-badge-text);">'
+        f'<svg width="12" height="12" viewBox="0 0 16 16" style="transform: rotate(45deg);"><rect x="2" y="2" width="12" height="12" rx="2" fill="var(--gold-500)"/></svg>'
+        f"{credits} Baklava</span>"
+    )

@@ -15,11 +15,19 @@
             <span id="position-badge" style="display: none; padding: 4px 12px; background: var(--gold-badge-bg); border: 1px solid var(--gold-glow-border); border-radius: 20px; font-size: 12px; font-weight: 700; color: var(--gold-badge-text);">
                 Sıranız: <span id="position-number"></span>.
             </span>
+            <span id="credits-area"
+                  hx-get="/partial/credits-badge"
+                  hx-trigger="load, sse:queue_updated"
+                  hx-target="this"
+                  hx-swap="innerHTML">
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--gold-badge-bg); border: 1px solid var(--gold-glow-border); border-radius: 20px; font-size: 11px; font-weight: 700; color: var(--gold-badge-text);"><svg width="12" height="12" viewBox="0 0 16 16" style="transform: rotate(45deg);"><rect x="2" y="2" width="12" height="12" rx="2" fill="var(--gold-500)"/></svg>{{ credits }} Baklava</span>
+            </span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
             {% if is_admin %}
             <a href="/admin" style="padding: 5px 12px; background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 8px; color: var(--red-text); font-size: 12px; font-weight: 600; text-decoration: none;">Admin Paneli</a>
             {% endif %}
+            <a href="/feature-requests" style="padding: 5px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); font-size: 12px; font-weight: 500; text-decoration: none;">Öneriler</a>
             <button id="theme-toggle-btn" class="theme-toggle" onclick="toggleTheme()"></button>
             <span style="color: var(--text-secondary); font-size: 13px;"><span style="color: var(--text-primary); font-weight: 600;">{{ username }}</span></span>
             <a href="/logout" class="logout-btn">Çıkış</a>
@@ -68,6 +76,17 @@
                 <label>Açıklama</label>
                 <input type="text" name="description" id="input-description" class="input-field" placeholder="Detaylar (opsiyonel)">
             </div>
+            <div style="min-width: 160px;">
+                <label>Kime</label>
+                <select name="target_user" id="input-target" class="input-field" style="height: 42px;">
+                    <option value="{{ admin_username }}">{{ admin_username }} (Admin)</option>
+                    {% for uid, name in user_names.items() %}
+                    {% if uid != admin_username %}
+                    <option value="{{ uid }}">{{ name }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
             <button type="submit" id="add-btn" class="btn-primary" style="height: 42px; white-space: nowrap;">Kuyruğa Ekle</button>
         </form>
     </div>
@@ -75,6 +94,9 @@
     <div style="display: flex; gap: 6px; margin-bottom: 20px;">
         <button onclick="switchTab('waiting')" class="tab-btn active" data-tab="waiting">
             Bekleyenler
+        </button>
+        <button onclick="switchTab('incoming')" class="tab-btn" data-tab="incoming">
+            Bana Gelenler
         </button>
         <button onclick="switchTab('completed')" class="tab-btn" data-tab="completed">
             Tamamlananlar
@@ -87,6 +109,15 @@
     <div id="waiting-tab">
         <div id="queue-list"
              hx-get="/partial/all-queue"
+             hx-trigger="load, sse:queue_updated, sse:queue_reordered, sse:comment_added"
+             hx-target="this"
+             hx-swap="innerHTML">
+        </div>
+    </div>
+
+    <div id="incoming-tab" style="display: none;">
+        <div id="incoming-list"
+             hx-get="/partial/incoming-queue"
              hx-trigger="load, sse:queue_updated, sse:queue_reordered, sse:comment_added"
              hx-target="this"
              hx-swap="innerHTML">
@@ -124,17 +155,18 @@
         var btn = document.getElementById('add-btn');
         var subject = document.getElementById('input-subject');
         var desc = document.getElementById('input-description');
+        var target = document.getElementById('input-target');
         btn.disabled = true;
 
         fetch('/queue/add', {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'subject=' + encodeURIComponent(subject.value) + '&description=' + encodeURIComponent(desc.value)
-        }).then(function(r) { return r.json(); }).then(function() {
+            body: 'subject=' + encodeURIComponent(subject.value) + '&description=' + encodeURIComponent(desc.value) + '&target_user=' + encodeURIComponent(target.value)
+        }).then(function(r) { return r.json(); }).then(function(data) {
             subject.value = '';
             desc.value = '';
             subject.focus();
-            showToast('Kuyruğa eklendi!', 'success');
+            showToast('Kuyruğa eklendi! Kalan: ' + (data.credits || 0) + ' baklava', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
         }).finally(function() {
@@ -179,12 +211,22 @@
 
     window.switchTab = function(tab) {
         document.getElementById('waiting-tab').style.display = tab === 'waiting' ? '' : 'none';
+        document.getElementById('incoming-tab').style.display = tab === 'incoming' ? '' : 'none';
         document.getElementById('completed-tab').style.display = tab === 'completed' ? '' : 'none';
         document.getElementById('deleted-tab').style.display = tab === 'deleted' ? '' : 'none';
         document.querySelectorAll('.tab-btn').forEach(function(btn) {
             btn.classList.toggle('active', btn.dataset.tab === tab);
         });
     };
+
+    document.body.addEventListener('htmx:sseMessage', function(evt) {
+        if (evt.detail.type === 'notification') {
+            var data = evt.detail.data || '';
+            if (data.startsWith("{{ username }}:")) {
+                addNotification();
+            }
+        }
+    });
 })();
 </script>
 {% endblock %}

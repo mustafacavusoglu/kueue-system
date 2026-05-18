@@ -32,10 +32,13 @@ def _comment_to_dict(c):
 
 def _item_to_dict(item, position=None):
     display_name = USER_NAMES.get(item.username, item.username)
+    target_display = USER_NAMES.get(item.target_user, item.target_user)
     return {
         "id": item.id,
         "username": item.username,
         "display_name": display_name,
+        "target_user": item.target_user,
+        "target_display": target_display,
         "subject": item.subject,
         "description": item.description,
         "status": item.status,
@@ -92,6 +95,7 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
             "waiting": waiting,
             "completed": completed,
             "deleted": deleted,
+            "user_names": USER_NAMES,
         },
     )
 
@@ -149,6 +153,7 @@ async def complete_item(
         item.completed_at = datetime.now(ISTANBUL_TZ)
         db.commit()
         await event_bus.broadcast("queue_updated")
+        await event_bus.broadcast("notification", f"{item.username}:completed")
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
@@ -291,5 +296,6 @@ async def admin_add_comment(
     db.refresh(comment)
 
     await event_bus.broadcast("comment_added")
+    await event_bus.broadcast("notification", f"{item.username}:comment")
 
     return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

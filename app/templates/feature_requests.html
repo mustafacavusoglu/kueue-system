@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Baklava AI - Öneriler{% endblock %}
+{% block content %}
+
+<nav class="navbar">
+    <div style="max-width: 1000px; margin: 0 auto; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--gold-400), var(--gold-700)); border-radius: 7px; transform: rotate(45deg); display: flex; align-items: center; justify-content: center;">
+                    <span style="transform: rotate(-45deg); font-weight: 900; font-size: 12px; color: #78350f;">B</span>
+                </div>
+                <span class="glow-text" style="font-size: 16px; font-weight: 700;">Baklava AI</span>
+            </div>
+            <span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: var(--gold-badge-bg); border: 1px solid var(--gold-glow-border); border-radius: 20px; color: var(--gold-badge-text); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                Öneriler
+            </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="/dashboard" style="color: var(--text-secondary); font-size: 12px; text-decoration: none;">Panele Dön</a>
+            <button id="theme-toggle-btn" class="theme-toggle" onclick="toggleTheme()"></button>
+            <span style="color: var(--text-secondary); font-size: 13px;"><span style="color: var(--text-primary); font-weight: 600;">{{ username }}</span></span>
+            <a href="/logout" class="logout-btn">Çıkış</a>
+        </div>
+    </div>
+</nav>
+
+<div style="max-width: 1000px; margin: 0 auto; padding: 28px 24px;">
+
+    <div class="glass" style="padding: 24px; margin-bottom: 24px;">
+        <h2 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" fill="none" stroke="var(--gold-500)" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+            Özellik Önerisi
+        </h2>
+        <form id="fr-form" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 180px;">
+                <label>Başlık</label>
+                <input type="text" name="title" id="fr-title" required class="input-field" placeholder="Öneri başlığı...">
+            </div>
+            <div style="flex: 2; min-width: 220px;">
+                <label>Özet</label>
+                <input type="text" name="summary" id="fr-summary" required class="input-field" placeholder="Önerinizi kısaca açıklayın...">
+            </div>
+            <button type="submit" id="fr-btn" class="btn-primary" style="height: 42px; white-space: nowrap;">Gönder</button>
+        </form>
+    </div>
+
+    <div id="fr-list">
+        {% if feature_requests|length == 0 %}
+        <div class="glass" style="padding: 36px 20px;">
+            <div class="empty-state">
+                <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+                <p style="font-size: 14px;">Henüz bir öneri yapılmamış.</p>
+            </div>
+        </div>
+        {% else %}
+        {% for fr in feature_requests %}
+        <div class="glass-card" style="padding: 16px 20px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="color: var(--text-primary); font-weight: 600; font-size: 14px;">{{ fr.title }}</div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 3px;">
+                        <span style="color: var(--gold-badge-text); font-size: 11px; font-weight: 600;">{{ user_names.get(fr.requested_by, fr.requested_by) }}</span>
+                        <span style="color: var(--text-muted); font-size: 11px;">{{ fr.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 6px; color: var(--text-secondary); font-size: 13px;">{{ fr.summary }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+(function() {
+    updateThemeIcon();
+
+    document.getElementById('fr-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('fr-btn');
+        var title = document.getElementById('fr-title');
+        var summary = document.getElementById('fr-summary');
+        btn.disabled = true;
+
+        fetch('/feature-requests/add', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'title=' + encodeURIComponent(title.value) + '&summary=' + encodeURIComponent(summary.value)
+        }).then(function(r) { return r.json(); }).then(function(data) {
+            if (data.ok) {
+                title.value = '';
+                summary.value = '';
+                title.focus();
+                showToast('Öneriniz alındı!', 'success');
+                location.reload();
+            }
+        }).catch(function() {
+            showToast('Hata oluştu', 'error');
+        }).finally(function() {
+            btn.disabled = false;
+        });
+    });
+})();
+</script>
+{% endblock %}

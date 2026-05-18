@@ -1,0 +1,23 @@
+{% if feature_requests|length == 0 %}
+<div class="glass" style="padding: 36px 20px;">
+    <div class="empty-state">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+        <p style="font-size: 14px;">Henüz bir öneri yapılmamış.</p>
+    </div>
+</div>
+{% else %}
+{% for fr in feature_requests %}
+<div class="glass-card" style="padding: 16px 20px; margin-bottom: 8px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+        <div style="flex: 1; min-width: 0;">
+            <div style="color: var(--text-primary); font-weight: 600; font-size: 14px;">{{ fr.title }}</div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 3px;">
+                <span style="color: var(--gold-badge-text); font-size: 11px; font-weight: 600;">{{ user_names.get(fr.requested_by, fr.requested_by) }}</span>
+                <span style="color: var(--text-muted); font-size: 11px;">{{ fr.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            </div>
+        </div>
+    </div>
+    <div style="margin-top: 6px; color: var(--text-secondary); font-size: 13px;">{{ fr.summary }}</div>
+</div>
+{% endfor %}
+{% endif %}
