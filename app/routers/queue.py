@@ -101,15 +101,23 @@ async def add_to_queue(
     db.refresh(item)
 
     await event_bus.broadcast("queue_updated")
-    await event_bus.broadcast("notification", f"{target}:queue")
+    await event_bus.broadcast(f"notification-{target}", "queue")
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
-        all_waiting = _waiting_order(
-            db.query(QueueItem).filter(QueueItem.status == "waiting")
-        ).all()
+        query = db.query(QueueItem).filter(QueueItem.status == "waiting")
+        if item.target_user:
+            query = query.filter(QueueItem.target_user == item.target_user)
+        else:
+            query = query.filter(QueueItem.target_user.is_(None))
+        target_waiting = _waiting_order(query).all()
+
         position = next(
-            (i for i, w in enumerate(all_waiting, 1) if w.id == item.id), None
+            (i for i, w in enumerate(target_waiting, 1) if w.id == item.id), None
+        )
+        credits = _get_credits(db, username)
+        return JSONResponse(
+            {"ok": True, "item": _item_to_dict(item, position), "credits": credits}
         )
         credits = _get_credits(db, username)
         return JSONResponse(
@@ -157,10 +165,21 @@ async def my_queue(request: Request, db: Session = Depends(get_db)):
         db.query(QueueItem).filter(QueueItem.status == "waiting")
     ).all()
 
+    from collections import defaultdict
+    def _target(item):
+        return item.target_user if item.target_user else settings.ADMIN_USERNAME.upper()
+
+    groups = defaultdict(list)
+    for w in all_waiting:
+        groups[_target(w)].append(w)
+
     global_position = None
-    for idx, w in enumerate(all_waiting, 1):
-        if w.username == username:
-            global_position = idx
+    for target, items in groups.items():
+        for idx, item in enumerate(items, 1):
+            if item.username == username:
+                global_position = idx
+                break
+        if global_position is not None:
             break
 
     my_items = (
@@ -174,8 +193,9 @@ async def my_queue(request: Request, db: Session = Depends(get_db)):
     for item in my_items:
         pos = None
         if item.status == "waiting":
+            group = groups.get(_target(item), [])
             pos = next(
-                (i for i, w in enumerate(all_waiting, 1) if w.id == item.id), None
+                (i for i, w in enumerate(group, 1) if w.id == item.id), None
             )
         items.append(_item_to_dict(item, pos))
 
@@ -218,7 +238,20 @@ async def all_queue(request: Request, db: Session = Depends(get_db)):
         db.query(QueueItem).filter(QueueItem.status == "waiting")
     ).all()
 
-    items = [_item_to_dict(item, i + 1) for i, item in enumerate(waiting)]
+    from collections import defaultdict
+    def _target(item):
+        return item.target_user if item.target_user else settings.ADMIN_USERNAME.upper()
+
+    groups = defaultdict(list)
+    for w in waiting:
+        groups[_target(w)].append(w)
+
+    idx_map = {}
+    for target, items in groups.items():
+        for i, item in enumerate(items, 1):
+            idx_map[item.id] = i
+
+    items = [_item_to_dict(item, idx_map.get(item.id)) for item in waiting]
 
     return JSONResponse({"items": items})
 
@@ -275,6 +308,7 @@ async def add_comment(
     db.refresh(comment)
 
     await event_bus.broadcast("comment_added")
-    await event_bus.broadcast("notification", f"{item.username}:comment")
+    await event_bus.broadcast(f"notification-{item.username}", "comment")
+    await event_bus.broadcast(f"notification-{item.target_user}", "comment")
 
     return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

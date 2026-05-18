@@ -8,6 +8,7 @@ from app.auth import get_current_user, is_admin
 from app.config import settings
 from app.database import get_db
 from app.models import QueueItem
+from collections import defaultdict
 
 router = APIRouter(prefix="/partial")
 templates = Jinja2Templates(directory="app/templates")
@@ -21,11 +22,28 @@ def _waiting_order(query):
     )
 
 
+def _target(item):
+    return item.target_user if item.target_user else settings.ADMIN_USERNAME.upper()
+
+
+def _assign_per_target_positions(items):
+    groups = defaultdict(list)
+    for item in items:
+        groups[_target(item)].append(item)
+    for group_items in groups.values():
+        for idx, item in enumerate(group_items, 1):
+            item.position = idx
+
+
 def _enrich_positions(items, all_waiting):
+    groups = defaultdict(list)
+    for w in all_waiting:
+        groups[_target(w)].append(w)
     for item in items:
         if item.status == "waiting":
+            group = groups.get(_target(item), [])
             item.position = next(
-                (i for i, w in enumerate(all_waiting, 1) if w.id == item.id), None
+                (i for i, w in enumerate(group, 1) if w.id == item.id), None
             )
         else:
             item.position = None
@@ -42,9 +60,16 @@ async def partial_queue_visual(request: Request, db: Session = Depends(get_db)):
     ).all()
 
     global_position = None
-    for idx, item in enumerate(all_waiting, 1):
-        if item.username == username:
-            global_position = idx
+    groups = defaultdict(list)
+    for w in all_waiting:
+        groups[_target(w)].append(w)
+
+    for target, items in groups.items():
+        for idx, item in enumerate(items, 1):
+            if item.username == username:
+                global_position = idx
+                break
+        if global_position is not None:
             break
 
     return templates.TemplateResponse(
@@ -100,8 +125,7 @@ async def partial_all_queue(request: Request, db: Session = Depends(get_db)):
         db.query(QueueItem).filter(QueueItem.status == "waiting")
     ).all()
 
-    for idx, item in enumerate(waiting, 1):
-        item.position = idx
+    _assign_per_target_positions(waiting)
 
     return templates.TemplateResponse(
         "partials/_all_queue.html",
@@ -172,8 +196,7 @@ async def partial_admin_waiting(request: Request, db: Session = Depends(get_db))
         db.query(QueueItem).filter(QueueItem.status == "waiting")
     ).all()
 
-    for idx, item in enumerate(waiting, 1):
-        item.position = idx
+    _assign_per_target_positions(waiting)
 
     return templates.TemplateResponse(
         "partials/_admin_waiting.html",
@@ -294,6 +317,11 @@ async def partial_incoming_queue(request: Request, db: Session = Depends(get_db)
             "current_user": username,
         },
     )
+
+
+@router.get("/empty", response_class=HTMLResponse)
+async def partial_empty():
+    return HTMLResponse("")
 
 
 @router.get("/credits-badge", response_class=HTMLResponse)

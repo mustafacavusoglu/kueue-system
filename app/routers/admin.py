@@ -153,7 +153,7 @@ async def complete_item(
         item.completed_at = datetime.now(ISTANBUL_TZ)
         db.commit()
         await event_bus.broadcast("queue_updated")
-        await event_bus.broadcast("notification", f"{item.username}:completed")
+        await event_bus.broadcast(f"notification-{item.username}", "completed")
 
     accept = request.headers.get("accept", "")
     if "application/json" in accept:
@@ -296,6 +296,7 @@ async def admin_add_comment(
     db.refresh(comment)
 
     await event_bus.broadcast("comment_added")
-    await event_bus.broadcast("notification", f"{item.username}:comment")
+    await event_bus.broadcast(f"notification-{item.username}", "comment")
+    await event_bus.broadcast(f"notification-{item.target_user}", "comment")
 
     return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

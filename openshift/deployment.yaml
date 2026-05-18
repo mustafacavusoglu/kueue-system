@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: baklava-ai
-          image: docker.io/mustdo12/baklava-ai:latest
+          image: docker.io/mustdo12/baklava-ai:1905260011
           ports:
             - containerPort: 8080
           env:
@@ -36,11 +36,11 @@ spec:
                   name: baklava-ai-secret
                   key: oauth-client-secret
             - name: OPENSHIFT_URL
-              value: "https://REPLACE_WITH_API_URL"
+              value: "https://api.crc.testing:6443"
             - name: OPENSHIFT_OAUTH_URL
-              value: "https://oauth-openshift-REPLACE_WITH_APPS_DOMAIN"
+              value: "https://oauth-openshift.apps-crc.testing"
             - name: APP_URL
-              value: "https://REPLACE_WITH_ROUTE_HOST"
+              value: "https://baklava-ai-kuyruk.apps-crc.testing"
             - name: ADMIN_USERNAME
               value: "developer"
           volumeMounts:

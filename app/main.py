@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections import defaultdict
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
@@ -71,10 +72,19 @@ async def dashboard(request: Request, db=Depends(get_db)):
         .all()
     )
 
+    def _target(item):
+        return item.target_user if item.target_user else settings.ADMIN_USERNAME.upper()
+
     global_position = None
-    for idx, item in enumerate(all_waiting, 1):
-        if item.username == username:
-            global_position = idx
+    groups = defaultdict(list)
+    for w in all_waiting:
+        groups[_target(w)].append(w)
+    for target, items in groups.items():
+        for idx, item in enumerate(items, 1):
+            if item.username == username:
+                global_position = idx
+                break
+        if global_position is not None:
             break
 
     my_items = (
@@ -86,8 +96,9 @@ async def dashboard(request: Request, db=Depends(get_db)):
 
     for item in my_items:
         if item.status == "waiting":
+            group = groups.get(_target(item), [])
             item.position = next(
-                (i for i, w in enumerate(all_waiting, 1) if w.id == item.id), None
+                (i for i, w in enumerate(group, 1) if w.id == item.id), None
             )
 
     incoming = (

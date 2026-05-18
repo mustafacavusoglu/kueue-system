@@ -142,6 +142,14 @@
         </div>
     </div>
 
+    <span id="notif-sink"
+          hx-get="/partial/empty"
+          hx-trigger="sse:notification-{{ username }}"
+          hx-swap="none"
+          hx-on::after-request="addNotification()"
+          style="display:none;">
+    </span>
+
 </div>
 
 </div>
@@ -201,6 +209,7 @@
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'text=' + encodeURIComponent(text),
         }).then(function(r) { return r.json(); }).then(function() {
+            input.value = '';
             showToast('Yorum eklendi!', 'success');
         }).catch(function() {
             showToast('Hata oluştu', 'error');
@@ -219,11 +228,12 @@
         });
     };
 
-    document.body.addEventListener('htmx:sseMessage', function(evt) {
-        if (evt.detail.type === 'notification') {
-            var data = evt.detail.data || '';
-            if (data.startsWith("{{ username }}:")) {
-                addNotification();
+    document.body.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.id && e.target.id.startsWith('comment-input-')) {
+            e.preventDefault();
+            var itemId = e.target.id.replace('comment-input-', '');
+            if (e.target.closest('.glass-card.own-item') || e.target.closest('#incoming-list')) {
+                addUserComment(parseInt(itemId));
             }
         }
     });

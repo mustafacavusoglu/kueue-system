@@ -5,6 +5,7 @@ metadata:
   labels:
     app: baklava-ai
 spec:
+  host: baklava-ai-kuyruk.apps-crc.testing
   to:
     kind: Service
     name: baklava-ai

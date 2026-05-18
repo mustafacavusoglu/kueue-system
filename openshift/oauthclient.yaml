@@ -3,5 +3,6 @@ kind: OAuthClient
 metadata:
   name: baklava-ai
 grantMethod: auto
+secret: "crc-local-dev-oauth-client-secret"
 redirectURIs:
   - https://baklava-ai-kuyruk.apps-crc.testing/auth/callback
