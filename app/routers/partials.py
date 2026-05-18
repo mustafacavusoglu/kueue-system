@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import get_current_user, is_admin
 from app.config import settings
 from app.database import get_db
 from app.models import QueueItem
@@ -165,7 +165,7 @@ async def partial_deleted(request: Request, db: Session = Depends(get_db)):
 @router.get("/admin/waiting", response_class=HTMLResponse)
 async def partial_admin_waiting(request: Request, db: Session = Depends(get_db)):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return HTMLResponse("")
 
     waiting = _waiting_order(
@@ -189,7 +189,7 @@ async def partial_admin_waiting(request: Request, db: Session = Depends(get_db))
 @router.get("/admin/completed", response_class=HTMLResponse)
 async def partial_admin_completed(request: Request, db: Session = Depends(get_db)):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return HTMLResponse("")
 
     completed = (
@@ -212,7 +212,7 @@ async def partial_admin_completed(request: Request, db: Session = Depends(get_db
 @router.get("/admin/deleted", response_class=HTMLResponse)
 async def partial_admin_deleted(request: Request, db: Session = Depends(get_db)):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return HTMLResponse("")
 
     deleted = (
@@ -235,7 +235,7 @@ async def partial_admin_deleted(request: Request, db: Session = Depends(get_db))
 @router.get("/admin/stats", response_class=HTMLResponse)
 async def partial_admin_stats(request: Request, db: Session = Depends(get_db)):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return HTMLResponse("")
 
     from app.models import QueueItem

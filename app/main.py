@@ -13,7 +13,7 @@ from sqlalchemy import func
 from app.config import settings
 from app.database import init_db, get_db
 from app.models import QueueItem, UserCredit
-from app.auth import router as auth_router, get_current_user
+from app.auth import router as auth_router, get_current_user, is_admin
 from app.routers.queue import router as queue_router
 from app.routers.admin import router as admin_router
 from app.routers.partials import router as partials_router
@@ -106,7 +106,7 @@ async def dashboard(request: Request, db=Depends(get_db)):
     uc = db.query(UserCredit).filter(UserCredit.username == username).first()
     credits = uc.credits if uc else 5
 
-    is_admin = username == settings.ADMIN_USERNAME
+    admin_user = is_admin(username)
 
     return templates.TemplateResponse(
         "index.html",
@@ -116,7 +116,7 @@ async def dashboard(request: Request, db=Depends(get_db)):
             "my_items": my_items,
             "incoming": incoming,
             "global_position": global_position,
-            "is_admin": is_admin,
+            "is_admin": admin_user,
             "app_name": settings.APP_NAME,
             "admin_username": settings.ADMIN_USERNAME,
             "credits": credits,

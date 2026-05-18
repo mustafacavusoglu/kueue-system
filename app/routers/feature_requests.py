@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import get_current_user, is_admin
 from app.config import settings
 from app.database import get_db
 from app.models import FeatureRequest
@@ -32,7 +32,7 @@ async def feature_requests_page(request: Request, db: Session = Depends(get_db))
     if not username:
         return RedirectResponse(url="/", status_code=303)
 
-    is_admin = username == settings.ADMIN_USERNAME
+    admin_user = is_admin(username)
     all_requests = (
         db.query(FeatureRequest)
         .order_by(FeatureRequest.created_at.desc())
@@ -44,7 +44,7 @@ async def feature_requests_page(request: Request, db: Session = Depends(get_db))
         {
             "request": request,
             "username": username,
-            "is_admin": is_admin,
+            "is_admin": admin_user,
             "feature_requests": all_requests,
             "user_names": USER_NAMES,
             "app_name": settings.APP_NAME,

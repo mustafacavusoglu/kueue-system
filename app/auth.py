@@ -30,6 +30,10 @@ def get_current_user(request: Request) -> Optional[str]:
     return request.session.get("username")
 
 
+def is_admin(username: str) -> bool:
+    return username.upper() == settings.ADMIN_USERNAME.upper()
+
+
 @router.get("/login")
 async def login(request: Request):
     redirect_uri = f"{settings.APP_URL}/auth/callback"
@@ -71,10 +75,12 @@ async def auth_callback(request: Request):
             username = user_info.get("metadata", {}).get("name") or user_info.get(
                 "name"
             )
-            logger.info(f"Logged in user: {username}")
             if not username:
                 logger.warning("Username not found in user info response.")
                 return RedirectResponse(url="/", status_code=303)
+
+            username = username.upper()
+            logger.info(f"Logged in user: {username}")
 
             if username not in ALLOWED_USERS:
                 logger.warning(

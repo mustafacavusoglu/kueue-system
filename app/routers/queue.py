@@ -79,7 +79,7 @@ async def add_to_queue(
     if not username:
         return RedirectResponse(url="/", status_code=303)
 
-    target = target_user.strip() if target_user.strip() else settings.ADMIN_USERNAME
+    target = target_user.strip().upper() if target_user.strip() else settings.ADMIN_USERNAME.upper()
 
     item = QueueItem(
         username=username,

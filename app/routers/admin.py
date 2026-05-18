@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import get_current_user, is_admin
 from app.config import settings
 from app.database import get_db
 from app.models import QueueItem, Comment, ISTANBUL_TZ
@@ -65,7 +65,7 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/", status_code=303)
-    if username != settings.ADMIN_USERNAME:
+    if not is_admin(username):
         return RedirectResponse(url="/dashboard", status_code=303)
 
     waiting = _waiting_order(
@@ -103,7 +103,7 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
 @router.get("/data")
 async def admin_data(request: Request, db: Session = Depends(get_db)):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     waiting = _waiting_order(
@@ -140,7 +140,7 @@ async def complete_item(
     db: Session = Depends(get_db),
 ):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return RedirectResponse(url="/", status_code=303)
 
     item = (
@@ -169,7 +169,7 @@ async def admin_delete_item(
     db: Session = Depends(get_db),
 ):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     item = db.query(QueueItem).filter(QueueItem.id == item_id).first()
@@ -193,7 +193,7 @@ async def move_item_up(
     db: Session = Depends(get_db),
 ):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     waiting = _waiting_order(
@@ -224,7 +224,7 @@ async def move_item_down(
     db: Session = Depends(get_db),
 ):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     waiting = _waiting_order(
@@ -254,7 +254,7 @@ async def reorder_queue(
     db: Session = Depends(get_db),
 ):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     body = await request.json()
@@ -283,7 +283,7 @@ async def admin_add_comment(
     db: Session = Depends(get_db),
 ):
     username = get_current_user(request)
-    if not username or username != settings.ADMIN_USERNAME:
+    if not username or not is_admin(username):
         return JSONResponse({"error": "unauthorized"}, status_code=401)
 
     item = db.query(QueueItem).filter(QueueItem.id == item_id).first()
