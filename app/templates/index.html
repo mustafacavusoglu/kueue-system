@@ -102,14 +102,21 @@
         <button onclick="switchTab('deleted')" class="tab-btn" data-tab="deleted">
             Silinenler
         </button>
-        <input type="text" id="queue-filter" class="input-field"
-               placeholder="Kullanıcı adıyla filtrele..."
-               style="margin-left: auto; width: 200px; height: 34px; font-size: 12px;"
-               hx-get="/partial/all-queue"
-               hx-trigger="keyup changed delay:300ms"
-               hx-target="#queue-list"
-               hx-swap="innerHTML"
-               hx-include="#queue-filter">
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink: 0;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a1.25 1.25 0 01-.659 1.107L17 8.5m-5 3.5a4.5 4.5 0 01-4.5-4.5M9 12.5H3m6 0l3-3m6 3a4.5 4.5 0 01-4.5-4.5M15 12.5h6m-6 0l-3-3"/></svg>
+            <select id="queue-filter" name="filter" class="input-field"
+                    style="width: 200px; height: 34px; font-size: 12px;"
+                    hx-get="/partial/all-queue"
+                    hx-trigger="change"
+                    hx-target="#queue-list"
+                    hx-swap="innerHTML"
+                    hx-include="#queue-filter">
+                <option value="">Tümü</option>
+                {% for uid, name in user_names.items() %}
+                <option value="{{ uid }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
     </div>
 
     <div id="waiting-tab">
