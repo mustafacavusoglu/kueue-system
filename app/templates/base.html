@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Baklava AI{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='2' width='12' height='12' rx='2' fill='%23f59e0b' transform='rotate(45,8,8)'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
@@ -41,12 +42,37 @@
         }
         var _notifCount = 0;
         var _baseTitle = document.title;
+        var _notifAudio = null;
+        var _defaultFavicon = document.querySelector('link[rel="icon"]').href;
+        var _notifFavicon = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2" fill="%23ef4444" transform="rotate(45,8,8)"/></svg>';
+        function _initAudio() {
+            try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                _notifAudio = function() {
+                    var o = ctx.createOscillator();
+                    var g = ctx.createGain();
+                    o.connect(g);
+                    g.connect(ctx.destination);
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(880, ctx.currentTime);
+                    o.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
+                    g.gain.setValueAtTime(0.15, ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+                    o.start(ctx.currentTime);
+                    o.stop(ctx.currentTime + 0.25);
+                };
+            } catch(e) { _notifAudio = function(){}; }
+        }
         function updateTabTitle() {
-            document.title = _notifCount > 0 ? '(' + _notifCount + ') ' + _baseTitle : _baseTitle;
+            document.title = _notifCount > 0 ? '🔔 (' + _notifCount + ') ' + _baseTitle : _baseTitle;
+            var fav = document.querySelector('link[rel="icon"]');
+            if (fav) fav.href = _notifCount > 0 ? _notifFavicon : _defaultFavicon;
         }
         function addNotification() {
             _notifCount++;
             updateTabTitle();
+            if (!_notifAudio) _initAudio();
+            try { _notifAudio(); } catch(e) {}
         }
         function clearNotifications() {
             _notifCount = 0;

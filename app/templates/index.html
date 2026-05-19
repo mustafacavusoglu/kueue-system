@@ -37,9 +37,9 @@
 
 <div style="max-width: 1000px; margin: 0 auto; padding: 28px 24px;">
 
-    <div id="queue-visual" class="glass" style="padding: 20px 28px; margin-bottom: 24px; {% if not global_position %}display: none;{% endif %}"
+    <div id="queue-visual" class="glass" style="padding: 16px 20px; margin-bottom: 24px;"
          hx-get="/partial/queue-visual"
-         hx-trigger="sse:queue_updated, sse:queue_reordered"
+         hx-trigger="load, sse:queue_updated, sse:queue_reordered"
          hx-target="#queue-visual"
          hx-swap="innerHTML">
         {% if global_position %}
@@ -79,9 +79,9 @@
             <div style="min-width: 160px;">
                 <label>Kime</label>
                 <select name="target_user" id="input-target" class="input-field" style="height: 42px;">
-                    <option value="{{ admin_username }}">{{ admin_username }} (Admin)</option>
+                    <option value="{{ admin_username }}">{{ user_names.get(admin_username, admin_username) }} (Admin)</option>
                     {% for uid, name in user_names.items() %}
-                    {% if uid != admin_username %}
+                    {% if uid.upper() != admin_username.upper() %}
                     <option value="{{ uid }}">{{ name }}</option>
                     {% endif %}
                     {% endfor %}

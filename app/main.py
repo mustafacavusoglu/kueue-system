@@ -75,17 +75,9 @@ async def dashboard(request: Request, db=Depends(get_db)):
     def _target(item):
         return item.target_user if item.target_user else settings.ADMIN_USERNAME.upper()
 
-    global_position = None
     groups = defaultdict(list)
     for w in all_waiting:
         groups[_target(w)].append(w)
-    for target, items in groups.items():
-        for idx, item in enumerate(items, 1):
-            if item.username == username:
-                global_position = idx
-                break
-        if global_position is not None:
-            break
 
     my_items = (
         db.query(QueueItem)
@@ -126,7 +118,6 @@ async def dashboard(request: Request, db=Depends(get_db)):
             "username": username,
             "my_items": my_items,
             "incoming": incoming,
-            "global_position": global_position,
             "is_admin": admin_user,
             "app_name": settings.APP_NAME,
             "admin_username": settings.ADMIN_USERNAME,

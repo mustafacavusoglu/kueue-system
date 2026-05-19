@@ -59,24 +59,37 @@ async def partial_queue_visual(request: Request, db: Session = Depends(get_db)):
         db.query(QueueItem).filter(QueueItem.status == "waiting")
     ).all()
 
-    global_position = None
     groups = defaultdict(list)
     for w in all_waiting:
         groups[_target(w)].append(w)
 
-    for target, items in groups.items():
+    positions = []
+    admin_username = settings.ADMIN_USERNAME.upper()
+    target_order = [admin_username] + sorted(
+        [t for t in groups.keys() if t.upper() != admin_username]
+    )
+
+    for target in target_order:
+        items = groups.get(target, [])
         for idx, item in enumerate(items, 1):
             if item.username == username:
-                global_position = idx
+                display = USER_NAMES.get(target, target)
+                is_admin_target = target.upper() == admin_username
+                positions.append({
+                    "target": target,
+                    "display": display,
+                    "position": idx,
+                    "is_admin": is_admin_target,
+                    "total": len(items),
+                })
                 break
-        if global_position is not None:
-            break
 
     return templates.TemplateResponse(
         "partials/_queue_visual.html",
         {
             "request": request,
-            "global_position": global_position,
+            "positions": positions,
+            "username": username,
         },
     )
 

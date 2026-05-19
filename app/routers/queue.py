@@ -296,7 +296,10 @@ async def add_comment(
 
     item = (
         db.query(QueueItem)
-        .filter(QueueItem.id == item_id, QueueItem.username == username)
+        .filter(
+            QueueItem.id == item_id,
+            (QueueItem.username == username) | (QueueItem.target_user == username),
+        )
         .first()
     )
     if not item:
