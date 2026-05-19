@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: baklava-ai
-          image: docker.io/mustdo12/baklava-ai:1905260029
+          image: docker.io/mustdo12/baklava-ai:1905261618
           ports:
             - containerPort: 8080
           env:
@@ -42,7 +42,7 @@ spec:
             - name: APP_URL
               value: "https://baklava-ai-kuyruk.apps-crc.testing"
             - name: ADMIN_USERNAME
-              value: "D67712"
+              value: "D49831"
           volumeMounts:
             - name: data
               mountPath: /data

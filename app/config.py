@@ -22,7 +22,6 @@ class Settings(BaseSettings):
         "D63746": "Doğukan POLATEL",
         "D67711": "Yiğit Baran UÇAR",
         "D67712": "Mustafa ÇAVUŞOĞLU",
-        "developer": "Developer",
     }
 
     @property
