@@ -129,14 +129,15 @@ async def partial_my_items(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/all-queue", response_class=HTMLResponse)
-async def partial_all_queue(request: Request, db: Session = Depends(get_db)):
+async def partial_all_queue(request: Request, filter: str = "", db: Session = Depends(get_db)):
     username = get_current_user(request)
     if not username:
         return HTMLResponse("")
 
-    waiting = _waiting_order(
-        db.query(QueueItem).filter(QueueItem.status == "waiting")
-    ).all()
+    query = db.query(QueueItem).filter(QueueItem.status == "waiting")
+    if filter.strip():
+        query = query.filter(QueueItem.username.ilike(f"%{filter.strip()}%"))
+    waiting = _waiting_order(query).all()
 
     _assign_per_target_positions(waiting)
 

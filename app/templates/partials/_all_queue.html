@@ -8,6 +8,7 @@
 {% else %}
 {% for item in waiting %}
 {% set is_own = item.username == current_user %}
+{% set is_target = item.target_user == current_user %}
 <div class="glass-card {% if is_own %}own-item{% else %}other-item{% endif %}" data-id="{{ item.id }}" style="padding: 16px 20px; margin-bottom: 8px;">
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
         <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;">
@@ -54,7 +55,7 @@
         {% endfor %}
     </div>
     {% endif %}
-    {% if is_own %}
+    {% if is_own or is_target %}
     <div style="margin-top: 8px; display: flex; gap: 8px;">
         <input type="text" id="comment-input-{{ item.id }}" class="input-field" style="flex: 1; height: 34px; font-size: 12px;" placeholder="Yorum yaz...">
         <button class="btn-primary" style="height: 34px; padding: 0 12px; font-size: 12px;" onclick="addUserComment({{ item.id }})">Gönder</button>

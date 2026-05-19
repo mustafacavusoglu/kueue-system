@@ -311,7 +311,9 @@ async def add_comment(
     db.refresh(comment)
 
     await event_bus.broadcast("comment_added")
-    await event_bus.broadcast(f"notification-{item.username}", "comment")
-    await event_bus.broadcast(f"notification-{item.target_user}", "comment")
+    if item.username != username:
+        await event_bus.broadcast(f"notification-{item.username}", "comment")
+    if item.target_user != username:
+        await event_bus.broadcast(f"notification-{item.target_user}", "comment")
 
     return JSONResponse({"ok": True, "comment": _comment_to_dict(comment)})

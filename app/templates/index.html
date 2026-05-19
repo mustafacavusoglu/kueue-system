@@ -79,7 +79,7 @@
                 <select name="target_user" id="input-target" class="input-field" style="height: 42px;">
                     <option value="{{ admin_username }}">{{ user_names.get(admin_username, admin_username) }} (Admin)</option>
                     {% for uid, name in user_names.items() %}
-                    {% if uid.upper() != admin_username.upper() %}
+                    {% if uid.upper() != admin_username.upper() and uid.upper() != username.upper() %}
                     <option value="{{ uid }}">{{ name }}</option>
                     {% endif %}
                     {% endfor %}
@@ -89,7 +89,7 @@
         </form>
     </div>
 
-    <div style="display: flex; gap: 6px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 6px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;">
         <button onclick="switchTab('waiting')" class="tab-btn active" data-tab="waiting">
             Bekleyenler
         </button>
@@ -102,6 +102,14 @@
         <button onclick="switchTab('deleted')" class="tab-btn" data-tab="deleted">
             Silinenler
         </button>
+        <input type="text" id="queue-filter" class="input-field"
+               placeholder="Kullanıcı adıyla filtrele..."
+               style="margin-left: auto; width: 200px; height: 34px; font-size: 12px;"
+               hx-get="/partial/all-queue"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#queue-list"
+               hx-swap="innerHTML"
+               hx-include="#queue-filter">
     </div>
 
     <div id="waiting-tab">
