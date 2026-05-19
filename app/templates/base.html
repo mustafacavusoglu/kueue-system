@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Baklava AI{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='2' y='2' width='12' height='12' rx='2' fill='%23f59e0b' transform='rotate(45,8,8)'/></svg>">
+    <link rel="icon" href="/static/logo1-removebg-preview.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
@@ -47,21 +47,9 @@
         var _notifFavicon = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2" fill="%23ef4444" transform="rotate(45,8,8)"/></svg>';
         function _initAudio() {
             try {
-                var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                _notifAudio = function() {
-                    var o = ctx.createOscillator();
-                    var g = ctx.createGain();
-                    o.connect(g);
-                    g.connect(ctx.destination);
-                    o.type = 'sine';
-                    o.frequency.setValueAtTime(880, ctx.currentTime);
-                    o.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
-                    g.gain.setValueAtTime(0.15, ctx.currentTime);
-                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-                    o.start(ctx.currentTime);
-                    o.stop(ctx.currentTime + 0.25);
-                };
-            } catch(e) { _notifAudio = function(){}; }
+                _notifAudio = new Audio('/static/baklava-not.mp3');
+                _notifAudio.volume = 0.5;
+            } catch(e) { _notifAudio = null; }
         }
         function updateTabTitle() {
             document.title = _notifCount > 0 ? '🔔 (' + _notifCount + ') ' + _baseTitle : _baseTitle;
@@ -72,7 +60,7 @@
             _notifCount++;
             updateTabTitle();
             if (!_notifAudio) _initAudio();
-            try { _notifAudio(); } catch(e) {}
+            if (_notifAudio) { _notifAudio.currentTime = 0; _notifAudio.play().catch(function(){}); }
         }
         function clearNotifications() {
             _notifCount = 0;
@@ -85,12 +73,19 @@
 </head>
 <body class="animated-bg">
     <div class="floating-diamonds">
-        <div class="diamond"></div><div class="diamond"></div><div class="diamond"></div>
-        <div class="diamond"></div><div class="diamond"></div><div class="diamond"></div>
-        <div class="diamond"></div><div class="diamond"></div><div class="diamond"></div><div class="diamond"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="30" height="30"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="15" height="15"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="40" height="40"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="20" height="20"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="35" height="35"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="25" height="25"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="18" height="18"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="28" height="28"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="22" height="22"></div>
+        <div class="diamond"><img src="/static/logo1-removebg-preview.png" width="32" height="32"></div>
     </div>
     <div class="top-right-baklava" title="Baklava AI">
-        <img src="/static/logo1.png" width="32" height="32" style="border-radius: 8px;">
+        <img src="/static/logo1-removebg-preview.png" width="40" height="40">
     </div>
     <div style="position: relative; z-index: 1;">
         {% block content %}{% endblock %}
