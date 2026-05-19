@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: baklava-ai
-          image: docker.io/mustdo12/baklava-ai:1905261618
+          image: docker.io/mustdo12/baklava-ai:1905261636
           ports:
             - containerPort: 8080
           env:

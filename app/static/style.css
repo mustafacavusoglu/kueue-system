@@ -708,31 +708,15 @@ label {
   position: fixed;
   top: 16px;
   right: 20px;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--gold-400), var(--gold-700));
-  border-radius: 8px;
-  transform: rotate(45deg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 100;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: default;
 }
 
 .top-right-baklava:hover {
-  transform: rotate(45deg) scale(1.1);
+  transform: scale(1.1);
   box-shadow: 0 6px 24px rgba(245, 158, 11, 0.5);
-}
-
-.baklava-inner {
-  transform: rotate(-45deg);
-  font-weight: 900;
-  font-size: 14px;
-  color: #78350f;
 }
 
 select.input-field {
